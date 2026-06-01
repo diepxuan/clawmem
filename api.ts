@@ -64,7 +64,12 @@ export async function apiCall(
       body: body ? JSON.stringify(body) : undefined,
       signal: AbortSignal.timeout(5000),
     });
-    const data = await resp.json();
+    let data: unknown;
+    try {
+      data = await resp.json();
+    } catch {
+      data = {};
+    }
     return { ok: resp.ok, status: resp.status, data };
   } catch (err) {
     return { ok: false, status: 0, data: { error: `ClawMem API unreachable at ${url}: ${String(err)}` } };
