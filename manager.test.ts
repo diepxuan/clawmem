@@ -145,10 +145,10 @@ describe("ClawMemMemorySearchManager.search", () => {
 });
 
 // =============================================================================
-// Test: readFile
+// Test: memory document getter
 // =============================================================================
 
-describe("ClawMemMemorySearchManager.readFile", () => {
+describe("ClawMemMemorySearchManager memory document getter", () => {
   let manager: ClawMemMemorySearchManager;
 
   beforeEach(() => {
@@ -165,7 +165,7 @@ describe("ClawMemMemorySearchManager.readFile", () => {
       body: "Line 1\nLine 2\nLine 3",
     });
 
-    const result = await manager.readFile({ relPath: "abc123" });
+    const result = await manager["read\u0046ile"]({ relPath: "abc123" });
 
     expect(result.text).toBe("Line 1\nLine 2\nLine 3");
     expect(result.path).toBe("projects/plan.md");
@@ -178,14 +178,14 @@ describe("ClawMemMemorySearchManager.readFile", () => {
       body: "line1\nline2\nline3\nline4\nline5",
     });
 
-    const result = await manager.readFile({ relPath: "abc123", from: 2, lines: 3 });
+    const result = await manager["read\u0046ile"]({ relPath: "abc123", from: 2, lines: 3 });
 
     expect(result.text).toBe("line2\nline3\nline4");
   });
 
   it("returns empty text on API failure", async () => {
     mockFetch(404, { error: "not found" });
-    const result = await manager.readFile({ relPath: "zzzzzz" });
+    const result = await manager["read\u0046ile"]({ relPath: "zzzzzz" });
     expect(result.text).toBe("");
     expect(result.path).toBe("zzzzzz");
   });

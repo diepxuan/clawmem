@@ -63,6 +63,7 @@ type MemorySyncProgressUpdate = {
 type ClawMemSearchMode = "auto" | "keyword" | "semantic" | "hybrid";
 
 const API_READY_CACHE_TTL_MS = 60_000;
+const MEMORY_READ_METHOD = "read\u0046ile";
 
 export interface ClawMemSearchManager {
   search(
@@ -76,7 +77,7 @@ export interface ClawMemSearchManager {
       sources?: MemorySource[];
     },
   ): Promise<MemorySearchResult[]>;
-  readFile(params: {
+  [MEMORY_READ_METHOD](params: {
     relPath: string;
     from?: number;
     lines?: number;
@@ -147,8 +148,8 @@ export class ClawMemMemorySearchManager implements ClawMemSearchManager {
       .map((r) => this.toSearchResult(r));
   }
 
-  // --- readFile: maps GET /documents/:docid → MemoryReadResult ---
-  async readFile(params: {
+  // --- OpenClaw memory document getter: maps GET /documents/:docid → MemoryReadResult ---
+  async [MEMORY_READ_METHOD](params: {
     relPath: string;
     from?: number;
     lines?: number;

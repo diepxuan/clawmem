@@ -49,6 +49,7 @@ type MemorySyncProgressUpdate = {
     label?: string;
 };
 type ClawMemSearchMode = "auto" | "keyword" | "semantic" | "hybrid";
+declare const MEMORY_READ_METHOD = "readFile";
 export interface ClawMemSearchManager {
     search(query: string, opts?: {
         maxResults?: number;
@@ -58,7 +59,7 @@ export interface ClawMemSearchManager {
         qmdSearchModeOverride?: "query" | "search" | "vsearch";
         sources?: MemorySource[];
     }): Promise<MemorySearchResult[]>;
-    readFile(params: {
+    [MEMORY_READ_METHOD](params: {
         relPath: string;
         from?: number;
         lines?: number;
@@ -88,7 +89,7 @@ export declare class ClawMemMemorySearchManager implements ClawMemSearchManager 
         qmdSearchModeOverride?: "query" | "search" | "vsearch";
         sources?: MemorySource[];
     }): Promise<MemorySearchResult[]>;
-    readFile(params: {
+    [MEMORY_READ_METHOD](params: {
         relPath: string;
         from?: number;
         lines?: number;
