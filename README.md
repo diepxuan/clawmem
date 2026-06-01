@@ -462,9 +462,11 @@ Check:
 Check:
 
 1. The current session has enough estimated tokens to cross the proximity gate.
-2. `precompactProximityRatio` or `CLAWMEM_PRECOMPACT_PROXIMITY_RATIO` is not set too high.
-3. `contextWindowTokens`, `reserveTokensFloor`, and `softThresholdTokens` match the target OpenClaw model/runtime configuration.
-4. A valid transcript path can be resolved for the session.
+2. `CLAWMEM_PRECOMPACT_PROXIMITY_RATIO` is not set too high.
+3. A valid transcript path can be resolved for the session.
+4. The deployment is not relying on undocumented plugin config keys for compaction thresholds.
+
+Current manifest note: `openclaw.plugin.json` has `additionalProperties: false` and does not expose `compactionContextWindow`, `precompactProximityRatio`, `softThresholdTokens`, or `reserveTokensFloor` as accepted plugin config fields. The only documented runtime override in this README is the environment variable `CLAWMEM_PRECOMPACT_PROXIMITY_RATIO`. Other threshold defaults are currently code-level defaults unless the manifest/schema is expanded in a future change.
 
 ### Plugin works in Bun but fails in Node ESM
 
