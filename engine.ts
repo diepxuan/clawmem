@@ -369,7 +369,10 @@ export async function maybeRunPrecompactExtract(
 ): Promise<void> {
   const force = params.force === true;
   if (!force) {
-    const estimatedTokens = estimateTokensFromMessages(params.messages);
+    const estimatedTokens = estimateTokensFromMessages(
+      params.messages,
+      thresholdCfg.charsPerToken,
+    );
     const threshold = resolveCompactionThreshold(thresholdCfg);
     const proximityRatio = resolveProximityRatio(thresholdCfg);
     const within = isWithinPrecompactProximity({
