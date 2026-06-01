@@ -1,18 +1,24 @@
 /**
  * ClawMem OpenClaw Plugin — Tool registrations
  *
- * Registers a subset of ClawMem's retrieval tools as OpenClaw agent tools.
- * Tools call an already-running ClawMem REST API for efficient access.
+ * Registers memory tools as OpenClaw agent tools, backed by the external
+ * ClawMem REST API.
  *
- * Registered tools (retrieval subset per GPT 5.4 recommendation):
- * - clawmem_search: Unified search (keyword/semantic/hybrid)
- * - clawmem_get: Get document by docid
- * - clawmem_session_log: Recent session summaries
- * - clawmem_timeline: Temporal context around a document
- * - clawmem_similar: Find similar documents
+ * Standard names (OpenClaw-compatible):
+ * - memory_search: Unified search (keyword/semantic/hybrid)
+ * - memory_get: Get document by docid or path
+ * - memory_recall: Recall context for current query
+ * - memory_store: Save a new memory
+ *
+ * Legacy aliases (backward-compatible):
+ * - clawmem_search → memory_search
+ * - clawmem_get → memory_get
+ * - clawmem_session_log → sessions viewer
+ * - clawmem_timeline → temporal context
+ * - clawmem_similar → similar documents
  */
 
-import { apiCall, type ClawMemConfig } from "./api.js";
+import { apiCall, type ClawMemConfig, type Logger } from "./api.js";
 
 // =============================================================================
 // Types (matching OpenClaw's tool interface without importing it)
@@ -23,18 +29,7 @@ type ToolResult = {
   details?: Record<string, unknown>;
 };
 
-type Logger = {
-  debug?: (msg: string) => void;
-  info: (msg: string) => void;
-  warn: (msg: string) => void;
-  error: (msg: string) => void;
-};
-
-// =============================================================================
-// Tool Definitions
-// =============================================================================
-
-type ToolDef = {
+export type ToolDef = {
   name: string;
   label: string;
   description: string;
@@ -42,15 +37,221 @@ type ToolDef = {
   execute: (toolCallId: string, params: Record<string, unknown>) => Promise<ToolResult>;
 };
 
-export function createTools(cfg: ClawMemConfig, logger: Logger): ToolDef[] {
+// =============================================================================
+// Standard Memory Tools (OpenClaw-compatible names)
+// =============================================================================
+
+function createStandardTools(cfg: ClawMemConfig, logger: Logger): ToolDef[] {
   return [
-    // --- Unified Search ---
+    // --- memory_search: Standard OpenClaw memory search ---
     {
-      name: "clawmem_search",
-      label: "ClawMem Search",
+      name: "memory_search",
+      label: "Memory Search",
       description:
         "Search long-term memory for relevant context. Supports keyword, semantic, and hybrid modes. " +
         "Use for recalling past decisions, preferences, session history, and learned patterns.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Search query" },
+          mode: {
+            type: "string",
+            enum: ["auto", "keyword", "semantic", "hybrid"],
+            description: "Search mode (default: auto)",
+          },
+          collection: { type: "string", description: "Limit to specific collection" },
+          limit: { type: "number", description: "Max results (default: 10, max: 50)" },
+          compact: { type: "boolean", description: "Return compact results (default: true)" },
+          corpus: {
+            type: "string",
+            enum: ["memory", "sessions", "all"],
+            description: "Corpus to search (default: memory)",
+          },
+        },
+        required: ["query"],
+      },
+      async execute(_id, params) {
+        const corpus = (params.corpus as string) ?? "memory";
+
+        // Sessions-only search
+        if (corpus === "sessions") {
+          return executeSessionSearch(cfg, params, logger);
+        }
+
+        const result = await apiCall(cfg, "POST", "/search", {
+          query: params.query as string,
+          mode: params.mode ?? "auto",
+          collection: params.collection,
+          limit: params.limit ?? 10,
+          compact: params.compact ?? true,
+        });
+
+        if (!result.ok) {
+          return {
+            content: [{ type: "text", text: `Search failed: ${result.data?.error || "unknown error"}` }],
+          };
+        }
+
+        const data = result.data;
+        if (!data.results || data.results.length === 0) {
+          return {
+            content: [{ type: "text", text: "No relevant memories found." }],
+            details: { count: 0 },
+          };
+        }
+
+        const text = data.results
+          .map((r: any, i: number) =>
+            `${i + 1}. [${r.contentType || "note"}] ${r.title || r.path} (score: ${r.score})${r.snippet ? `\n   ${r.snippet}` : ""}`
+          )
+          .join("\n");
+
+        return {
+          content: [{ type: "text", text: `Found ${data.count} results:\n\n${text}` }],
+          details: { count: data.count, query: data.query, mode: data.mode },
+        };
+      },
+    },
+
+    // --- memory_get: Standard OpenClaw memory get ---
+    {
+      name: "memory_get",
+      label: "Memory Get",
+      description:
+        "Retrieve full content of a specific memory document by its docid (6-char hex prefix) or path.",
+      parameters: {
+        type: "object",
+        properties: {
+          docid: { type: "string", description: "Document ID (6-char hex prefix from search results) or path" },
+          from: { type: "number", description: "Start line number (1-indexed, optional)" },
+          lines: { type: "number", description: "Number of lines to read (optional)" },
+        },
+        required: ["docid"],
+      },
+      async execute(_id, params) {
+        const docid = params.docid as string;
+        const result = await apiCall(cfg, "GET", `/documents/${docid}`);
+
+        if (!result.ok) {
+          return {
+            content: [{ type: "text", text: `Document not found: ${docid}` }],
+          };
+        }
+
+        const d = result.data;
+        let body = d.body ?? "";
+
+        // Apply line-range slicing if requested
+        if (params.from !== undefined || params.lines !== undefined) {
+          const allLines = body.split("\n");
+          const start = Math.max(0, Number(params.from ?? 1) - 1);
+          const totalLines = allLines.length;
+          const count = params.lines !== undefined ? Number(params.lines) : totalLines - start;
+          body = allLines.slice(start, start + count).join("\n");
+        }
+
+        return {
+          content: [{
+            type: "text",
+            text: `# ${d.title || d.path}\n\nCollection: ${d.collection}\nModified: ${d.modifiedAt}\n\n${body}`,
+          }],
+          details: { docid: d.docid, path: d.path },
+        };
+      },
+    },
+
+    // --- memory_recall: Recall context for current query ---
+    {
+      name: "memory_recall",
+      label: "Memory Recall",
+      description:
+        "Recall relevant memory context for the current query. Returns merged context suitable " +
+        "for prompt injection. Use before answering questions that may require past context.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Query to recall context for" },
+          limit: { type: "number", description: "Max results (default: 5)" },
+        },
+        required: ["query"],
+      },
+      async execute(_id, params) {
+        const limit = (params.limit as number) ?? 5;
+        const result = await apiCall(cfg, "POST", "/search", {
+          query: params.query as string,
+          mode: "auto",
+          limit,
+          compact: false,
+        });
+
+        if (!result.ok || !result.data?.results || result.data.results.length === 0) {
+          return {
+            content: [{ type: "text", text: "No relevant memories recalled." }],
+          };
+        }
+
+        const contexts = result.data.results
+          .map((r: any) => `## ${r.title || r.path}\n${r.body || r.snippet || ""}`)
+          .join("\n\n---\n\n");
+
+        return {
+          content: [{ type: "text", text: `Recalled ${result.data.results.length} memories:\n\n${contexts}` }],
+          details: { count: result.data.results.length },
+        };
+      },
+    },
+
+    // --- memory_store: Save a new memory ---
+    {
+      name: "memory_store",
+      label: "Memory Store",
+      description:
+        "Save a new memory entry. Use for storing important facts, decisions, preferences, " +
+        "and observations that should persist across sessions.",
+      parameters: {
+        type: "object",
+        properties: {
+          text: { type: "string", description: "Memory content to store" },
+          collection: { type: "string", description: "Collection name (default: memory)" },
+          title: { type: "string", description: "Optional title" },
+        },
+        required: ["text"],
+      },
+      async execute(_id, params) {
+        const result = await apiCall(cfg, "POST", "/documents", {
+          body: params.text as string,
+          collection: (params.collection as string) || "memory",
+          title: params.title,
+        });
+
+        if (!result.ok) {
+          return {
+            content: [{ type: "text", text: `Failed to store memory: ${result.data?.error || "unknown error"}` }],
+          };
+        }
+
+        const d = result.data;
+        return {
+          content: [{ type: "text", text: `Memory stored: ${d.docid || "ok"}` }],
+          details: { docid: d.docid, path: d.path },
+        };
+      },
+    },
+  ];
+}
+
+// =============================================================================
+// Legacy ClawMem Tools (backward-compatible names)
+// =============================================================================
+
+function createLegacyTools(cfg: ClawMemConfig, logger: Logger): ToolDef[] {
+  return [
+    // --- clawmem_search: legacy alias ---
+    {
+      name: "clawmem_search",
+      label: "ClawMem Search (legacy)",
+      description:
+        "[Legacy] Search long-term memory. Prefer memory_search for new usage.",
       parameters: {
         type: "object",
         properties: {
@@ -102,12 +303,12 @@ export function createTools(cfg: ClawMemConfig, logger: Logger): ToolDef[] {
       },
     },
 
-    // --- Get Document ---
+    // --- clawmem_get: legacy alias ---
     {
       name: "clawmem_get",
-      label: "ClawMem Get",
+      label: "ClawMem Get (legacy)",
       description:
-        "Retrieve full content of a specific memory document by its docid (6-char hex prefix).",
+        "[Legacy] Retrieve full content of a specific memory document. Prefer memory_get for new usage.",
       parameters: {
         type: "object",
         properties: {
@@ -136,7 +337,7 @@ export function createTools(cfg: ClawMemConfig, logger: Logger): ToolDef[] {
       },
     },
 
-    // --- Session Log ---
+    // --- clawmem_session_log ---
     {
       name: "clawmem_session_log",
       label: "ClawMem Sessions",
@@ -149,34 +350,11 @@ export function createTools(cfg: ClawMemConfig, logger: Logger): ToolDef[] {
         },
       },
       async execute(_id, params) {
-        const limit = (params.limit as number) || 5;
-        const result = await apiCall(cfg, "GET", `/sessions?limit=${limit}`);
-
-        if (!result.ok) {
-          return {
-            content: [{ type: "text", text: `Failed to retrieve sessions: ${result.data?.error}` }],
-          };
-        }
-
-        const sessions = result.data.sessions;
-        if (!sessions || sessions.length === 0) {
-          return { content: [{ type: "text", text: "No session history found." }] };
-        }
-
-        const text = sessions
-          .map((s: any, i: number) =>
-            `${i + 1}. [${s.started_at}] ${s.session_id?.slice(0, 8)}... — ${s.prompt_count || 0} prompts`
-          )
-          .join("\n");
-
-        return {
-          content: [{ type: "text", text: `Recent sessions:\n\n${text}` }],
-          details: { count: sessions.length },
-        };
+        return executeSessionSearch(cfg, params, logger);
       },
     },
 
-    // --- Timeline ---
+    // --- clawmem_timeline ---
     {
       name: "clawmem_timeline",
       label: "ClawMem Timeline",
@@ -225,7 +403,7 @@ export function createTools(cfg: ClawMemConfig, logger: Logger): ToolDef[] {
       },
     },
 
-    // --- Similar ---
+    // --- clawmem_similar ---
     {
       name: "clawmem_similar",
       label: "ClawMem Similar",
@@ -266,4 +444,62 @@ export function createTools(cfg: ClawMemConfig, logger: Logger): ToolDef[] {
       },
     },
   ];
+}
+
+// =============================================================================
+// Shared helpers
+// =============================================================================
+
+async function executeSessionSearch(
+  cfg: ClawMemConfig,
+  params: Record<string, unknown>,
+  logger: Logger,
+): Promise<ToolResult> {
+  const limit = (params.limit as number) || 5;
+  const result = await apiCall(cfg, "GET", `/sessions?limit=${limit}`);
+
+  if (!result.ok) {
+    return {
+      content: [{ type: "text", text: `Failed to retrieve sessions: ${result.data?.error}` }],
+    };
+  }
+
+  const sessions = result.data.sessions;
+  if (!sessions || sessions.length === 0) {
+    return { content: [{ type: "text", text: "No session history found." }] };
+  }
+
+  const text = sessions
+    .map((s: any, i: number) =>
+      `${i + 1}. [${s.started_at}] ${s.session_id?.slice(0, 8)}... — ${s.prompt_count || 0} prompts`
+    )
+    .join("\n");
+
+  return {
+    content: [{ type: "text", text: `Recent sessions:\n\n${text}` }],
+    details: { count: sessions.length },
+  };
+}
+
+// =============================================================================
+// Public factory
+// =============================================================================
+
+export interface ToolSetOptions {
+  includeStandard?: boolean;  // memory_search, memory_get, memory_recall, memory_store
+  includeLegacy?: boolean;    // clawmem_* tools
+}
+
+export function createTools(
+  cfg: ClawMemConfig,
+  logger: Logger,
+  options?: ToolSetOptions,
+): ToolDef[] {
+  const includeStandard = options?.includeStandard !== false;
+  const includeLegacy = options?.includeLegacy !== false;
+
+  const tools: ToolDef[] = [];
+  if (includeStandard) tools.push(...createStandardTools(cfg, logger));
+  if (includeLegacy) tools.push(...createLegacyTools(cfg, logger));
+  return tools;
 }

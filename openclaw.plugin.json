@@ -27,6 +27,23 @@
     "enableTools": {
       "label": "Register Agent Tools",
       "help": "Register ClawMem retrieval tools for agent-initiated API queries"
+    },
+    "autoRecall": {
+      "label": "Auto Recall",
+      "help": "Automatically recall relevant memory before each agent turn (default: false)"
+    },
+    "autoCapture": {
+      "label": "Auto Capture",
+      "help": "Automatically capture important facts after agent responses (default: true)"
+    },
+    "recallMaxChars": {
+      "label": "Recall Max Characters",
+      "placeholder": "1000",
+      "help": "Maximum characters for recall query text (default: 1000)"
+    },
+    "collections": {
+      "label": "Collections",
+      "help": "Comma-separated list of collections to index and search (default: all)"
     }
   },
   "configSchema": {
@@ -50,7 +67,28 @@
         "enum": ["speed", "balanced", "deep"]
       },
       "enableTools": {
-        "type": "boolean"
+        "type": "boolean",
+        "default": true
+      },
+      "autoRecall": {
+        "type": "boolean",
+        "default": false
+      },
+      "autoCapture": {
+        "type": "boolean",
+        "default": true
+      },
+      "recallMaxChars": {
+        "type": "number",
+        "minimum": 100,
+        "maximum": 10000,
+        "default": 1000
+      },
+      "collections": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
       }
     }
   }
