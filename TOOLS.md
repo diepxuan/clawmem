@@ -34,13 +34,12 @@ git status --short --branch
 npx tsc --noEmit
 ```
 
-### ClawMem runtime
+### ClawMem API
 ```bash
-clawmem --help
-External ClawMem API must already be running at configured apiBaseUrl
+curl -fsS http://10.0.0.105:7438/health
 ```
 
-If `clawmem` binary missing → not a blocker for docs PR. Report as environment limitation.
+This repository is API-only. Do not depend on a local `clawmem` binary in this repo.
 
 ## Local Files Policy
 

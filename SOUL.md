@@ -40,8 +40,8 @@ OpenClaw memory plugin adapter — kết nối OpenClaw agents với local ClawM
 - Plugin registration qua `api.registerMemoryCapability()`
 - API-only: không lifecycle hooks, không binary, không session transcript resolver
 - REST API external do hệ thống khác supervise
-- Fail-open: binary/API unavailable → continue + log warning
-- External binary `clawmem` — repo chỉ chứa adapter
+- Fail-open: API unavailable → continue + log warning
+- Không có local `clawmem` binary trong repo — chỉ cấu hình HTTP API endpoint
 
 ---
 

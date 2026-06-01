@@ -27,8 +27,8 @@ Last updated: 2026-06-01
 | ID | Question | Context |
 | --- | --- | --- |
 | Q1 | Should this package ship TypeScript only or compiled JavaScript? | Current entry is `index.ts`; no build output is committed. |
-| Q2 | Where is the canonical ClawMem runtime repository? | This plugin depends on the external `clawmem` binary. |
-| Q3 | Which OpenClaw versions are supported? | Hook behavior and state layout rely on OpenClaw internals. |
+| Q2 | Where is the canonical ClawMem API service maintained? | This plugin depends on the external HTTP API endpoint, currently `http://10.0.0.105:7438`. |
+| Q3 | Which OpenClaw versions are supported? | Plugin behavior depends on OpenClaw plugin/tool registration APIs. |
 
 ## Maintenance rules
 
