@@ -14,17 +14,16 @@ Last updated: 2026-06-01
 | --- | --- | --- | --- |
 | T1 | Keep README current | README should stay aligned with config schema, tools, hooks, and service behavior. | `README.md`, `openclaw.plugin.json`, `tools.ts`, `engine.ts` |
 | T2 | Document ClawMem hook contracts | List required `clawmem hook <name>` commands and expected input/output shape. | `README.md` or `docs/HOOKS.md` |
-| T3 | Add CI | Add GitHub Actions for diff hygiene, type-check, and tests when tooling exists. | `.github/workflows/` |
-| T4 | Add changelog | Track plugin changes, compatibility notes, and breaking changes. | `CHANGELOG.md` |
-| T5 | Define OpenClaw compatibility range | Code comments reference OpenClaw internal paths. Document target version/commit compatibility. | `README.md`, `docs/COMPATIBILITY.md` |
+| T3 | Add changelog | Track plugin changes, compatibility notes, and breaking changes. | `CHANGELOG.md` |
+| T4 | Define OpenClaw compatibility range | Code comments reference OpenClaw internal paths. Document target version/commit compatibility. | `README.md`, `docs/COMPATIBILITY.md` |
 
 ## Nice to have
 
 | ID | Task | Details | Files |
 | --- | --- | --- | --- |
-| T6 | Improve token estimation | `estimateTokensFromMessages` uses a chars/4 heuristic. Consider model-aware estimation if needed. | `compaction-threshold.ts` |
-| T7 | Add integration tests | Use a mock `clawmem serve` and verify tool calls plus lifecycle hook flows. | test suite |
-| T8 | Add service readiness handling | Check whether `clawmem serve` exposes or should expose a health endpoint before tools depend on it. | `shell.ts`, upstream ClawMem runtime |
+| T5 | Improve token estimation | `estimateTokensFromMessages` uses a chars/4 heuristic. Consider model-aware estimation if needed. | `compaction-threshold.ts` |
+| T6 | Add integration tests | Use a mock `clawmem serve` and verify tool calls plus lifecycle hook flows. | test suite |
+| T7 | Add service readiness handling | Check whether `clawmem serve` exposes or should expose a health endpoint before tools depend on it. | `shell.ts`, upstream ClawMem runtime |
 
 ## Open questions
 
