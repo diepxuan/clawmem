@@ -182,6 +182,41 @@ export function spawnBackground(
 }
 
 /**
+ * Poll the ClawMem REST API until it responds or max attempts reached.
+ * Used after `clawmem serve` spawn to ensure the service is ready before
+ * agent tools start making requests.
+ *
+ * @param port - REST API port
+ * @param maxAttempts - max retries (default: 10)
+ * @param intervalMs - poll interval ms (default: 500)
+ * @param logger - optional logger
+ * @returns true if service became ready, false otherwise
+ */
+export async function waitForServiceReady(
+  port: number,
+  maxAttempts: number = 10,
+  intervalMs: number = 500,
+  logger?: { info: (...args: any[]) => void; warn: (...args: any[]) => void; debug?: (...args: any[]) => void },
+): Promise<boolean> {
+  const url = `http://127.0.0.1:${port}/`;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const resp = await fetch(url, { signal: AbortSignal.timeout(1000) });
+      // Any response (even 404) means the server is listening
+      logger?.debug?.(`clawmem: service ready on port ${port} (HTTP ${resp.status}, attempt ${attempt})`);
+      return true;
+    } catch {
+      logger?.debug?.(`clawmem: service not ready on port ${port} (attempt ${attempt}/${maxAttempts})`);
+    }
+    if (attempt < maxAttempts) {
+      await new Promise((r) => setTimeout(r, intervalMs));
+    }
+  }
+  logger?.warn(`clawmem: service did not become ready on port ${port} after ${maxAttempts} attempts (~${maxAttempts * intervalMs}ms)`);
+  return false;
+}
+
+/**
  * Parse hook output JSON. Returns null on parse failure.
  */
 export function parseHookOutput(stdout: string): Record<string, unknown> | null {

@@ -392,6 +392,10 @@ If `CLAWMEM_API_TOKEN` is set, the tool client sends it as:
 Authorization: Bearer <token>
 ```
 
+### Service readiness
+
+After spawning `clawmem serve`, the plugin polls the REST API endpoint (up to 10 attempts at 500ms intervals, ~5s total) before declaring the service started. This prevents agent tools from hitting a cold API and getting spurious connection errors. If the service does not become ready within the timeout, the plugin logs a warning but does not block agent execution (fail-open).
+
 ## Transcript resolution
 
 Some OpenClaw lifecycle events do not include a transcript file path. The plugin derives the transcript path from OpenClaw state layout:
