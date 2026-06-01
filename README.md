@@ -40,13 +40,13 @@ docs/TASKS.md            # Project backlog
 Type: string
 Default: `http://127.0.0.1:7438`
 
-Base URL for the already-running ClawMem REST API.
+Base URL for the already-running ClawMem REST API. The current shared ClawMem API URL used by this project is `http://10.0.0.105:7438`.
 
 Example:
 
 ```json
 {
-  "apiBaseUrl": "http://127.0.0.1:7438"
+  "apiBaseUrl": "http://10.0.0.105:7438"
 }
 ```
 
@@ -79,7 +79,61 @@ Default: profile-derived (`speed=400`, `balanced=800`, `deep=1200`)
 
 Retained as a compatibility/profile hint.
 
+## ClawMem API server
+
+This plugin expects the ClawMem HTTP REST API to be started outside OpenClaw.
+
+Common ways to run the server:
+
+```bash
+./bin/clawmem serve                          # http://10.0.0.105:7438, no auth
+./bin/clawmem serve --port 8080              # custom port
+CLAWMEM_API_TOKEN=<token> ./bin/clawmem serve # require bearer token auth
+```
+
+When `CLAWMEM_API_TOKEN` is set for the server, every request must include:
+
+```text
+Authorization: Bearer <token>
+```
+
+Configure the same token through plugin config `apiToken` or the OpenClaw process environment variable `CLAWMEM_API_TOKEN`.
+
+Example search request:
+
+```bash
+curl -X POST http://10.0.0.105:7438/search \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"authentication decisions","mode":"hybrid","compact":true}'
+```
+
+### API endpoints
+
+| Method | Path | Description |
+| --- | --- | --- |
+| GET | `/health` | Liveness probe, version, and document count |
+| GET | `/stats` | Full index statistics |
+| POST | `/search` | Unified search (`mode`: `auto`, `keyword`, `semantic`, `hybrid`) |
+| POST | `/retrieve` | Smart retrieve with auto-routing (`mode`: `auto`, `keyword`, `semantic`, `causal`, `timeline`, `hybrid`) |
+| GET | `/documents/:docid` | Single document by 6-character hash prefix |
+| GET | `/documents?pattern=...` | Multi-get by glob pattern |
+| GET | `/timeline/:docid` | Temporal neighborhood (`before`/`after`) |
+| GET | `/sessions` | Recent session history |
+| GET | `/collections` | List all collections |
+| GET | `/lifecycle/status` | Active, archived, pinned, and snoozed counts |
+| POST | `/documents/:docid/pin` | Pin or unpin a document |
+| POST | `/documents/:docid/snooze` | Snooze a document until a date |
+| POST | `/documents/:docid/forget` | Deactivate a document |
+| POST | `/lifecycle/sweep` | Archive stale docs; dry run by default |
+| GET | `/graph/causal/:docid` | Causal chain traversal |
+| GET | `/graph/similar/:docid` | k-nearest-neighbor semantic neighbors |
+| GET | `/export` | Full vault export as JSON |
+| POST | `/reindex` | Trigger a re-scan |
+| POST | `/graphs/build` | Rebuild temporal and semantic graphs |
+
 ## Registered tools
+
+The plugin exposes a retrieval-focused subset of the API to OpenClaw agents:
 
 | Tool | API endpoint | Purpose |
 | --- | --- | --- |
@@ -87,7 +141,9 @@ Retained as a compatibility/profile hint.
 | `clawmem_get` | `GET /documents/:docid` | Fetch a full memory document |
 | `clawmem_session_log` | `GET /sessions?limit=N` | List recent sessions |
 | `clawmem_timeline` | `GET /timeline/:docid` | Show temporal context around a document |
-| `clawmem_similar` | `GET /similar/:docid?limit=N` | Find similar documents |
+| `clawmem_similar` | `GET /graph/similar/:docid?limit=N` | Find similar documents |
+
+Other API endpoints are available for dashboards, non-MCP agents, cross-machine access, lifecycle operations, and programmatic maintenance, but they are not all registered as OpenClaw tools.
 
 All tools fail open: if the API is unreachable or returns an error, the tool returns a readable text error instead of crashing the agent.
 
