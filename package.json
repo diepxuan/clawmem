@@ -3,7 +3,16 @@
   "version": "0.0.1",
   "description": "OpenClaw plugin adapter for ClawMem — on-device hybrid memory layer",
   "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
   "openclaw": {
-    "extensions": ["./index.ts"]
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "typescript": "^6.0.3"
   }
 }
