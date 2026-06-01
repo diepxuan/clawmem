@@ -30,8 +30,8 @@
 - Plugin registration qua `api.registerMemoryCapability()`
 - API-only agent tools gọi ClawMem REST API
 - Không start/stop runtime process; dùng external REST API
-- Fail-open: khi ClawMem binary/API unavailable → continue + log warning
-- External binary `clawmem` — repo chỉ chứa adapter
+- Fail-open: khi ClawMem API unavailable → continue + log warning
+- Không có local `clawmem` binary trong repo — chỉ cấu hình HTTP API endpoint
 
 ---
 

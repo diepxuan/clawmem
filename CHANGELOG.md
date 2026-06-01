@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- Document ClawMem API server startup, auth, endpoint surface, and tool/API mapping.
+- Document ClawMem API endpoint, auth, endpoint surface, and tool/API mapping without local binary assumptions.
 - Refactor plugin to API-only mode.
 - Remove ClawMem binary execution and service spawning.
 - Remove command-line lifecycle integration.

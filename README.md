@@ -81,17 +81,15 @@ Retained as a compatibility/profile hint.
 
 ## ClawMem API server
 
-This plugin expects the ClawMem HTTP REST API to be started outside OpenClaw.
+This plugin only connects to an existing ClawMem HTTP REST API. It does not ship, execute, or document any local `clawmem` binary.
 
-Common ways to run the server:
+Current API endpoint used by this project:
 
-```bash
-./bin/clawmem serve                          # http://10.0.0.105:7438, no auth
-./bin/clawmem serve --port 8080              # custom port
-CLAWMEM_API_TOKEN=<token> ./bin/clawmem serve # require bearer token auth
+```text
+http://10.0.0.105:7438
 ```
 
-When `CLAWMEM_API_TOKEN` is set for the server, every request must include:
+When the API server requires a token, every request must include:
 
 ```text
 Authorization: Bearer <token>
