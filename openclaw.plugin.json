@@ -63,6 +63,12 @@
       "placeholder": "http://localhost:8090",
       "help": "URL for reranking service",
       "advanced": true
+    },
+    "charsPerToken": {
+      "label": "Chars Per Token",
+      "placeholder": "3.5",
+      "help": "Heuristic for token estimation: ~4.0 OpenAI, ~3.4 Claude, ~2.5 Qwen, ~3.2 Llama. Default 3.5.",
+      "advanced": true
     }
   },
   "configSchema": {
@@ -128,6 +134,12 @@
         "type": "number",
         "minimum": 0,
         "description": "Reserve floor tokens (matches MemoryFlushPlan.reserveTokensFloor)"
+      },
+      "charsPerToken": {
+        "type": "number",
+        "minimum": 1.0,
+        "maximum": 10.0,
+        "description": "Chars-per-token heuristic for token estimation (default: 3.5). Use ~4.0 for OpenAI, ~3.4 for Claude, ~2.5 for Qwen."
       }
     }
   }

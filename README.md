@@ -212,6 +212,28 @@ Minimum: 0
 
 Reserve floor tokens, matching `MemoryFlushPlan.reserveTokensFloor` in OpenClaw. Subtracted from the context window along with the soft threshold.
 
+### `charsPerToken`
+
+Type: number
+Default: 3.5
+Minimum: 1.0
+Maximum: 10.0
+
+Chars-per-token heuristic used by the token estimation function. This value determines how many characters count as one token when estimating session buffer size for the precompact proximity gate.
+
+Recommended values by model family:
+
+| Model family | `charsPerToken` |
+|---|---|
+| OpenAI (GPT-3.5/4) | 4.0 |
+| Claude (2/3) | 3.4 |
+| Qwen 2/2.5 | 2.5 |
+| Llama 3/3.1 | 3.2 |
+| Mistral | 3.5 |
+| Unknown/default | 3.5 |
+
+The default 3.5 is conservative — it slightly over-estimates token count, causing precompact to fire a bit earlier (safe).
+
 ## Example configuration
 
 Minimal configuration:
@@ -503,7 +525,7 @@ Check:
 3. A valid transcript path can be resolved for the session.
 4. The deployment is not relying on undocumented plugin config keys for compaction thresholds.
 
-Current manifest note: `openclaw.plugin.json` has `additionalProperties: false` and does not expose `compactionContextWindow`, `precompactProximityRatio`, `softThresholdTokens`, or `reserveTokensFloor` as accepted plugin config fields. The only documented runtime override in this README is the environment variable `CLAWMEM_PRECOMPACT_PROXIMITY_RATIO`. Other threshold defaults are currently code-level defaults unless the manifest/schema is expanded in a future change.
+Current manifest note: all compaction-related config fields (`compactionContextWindow`, `precompactProximityRatio`, `softThresholdTokens`, `reserveTokensFloor`, `charsPerToken`) are now exposed in the plugin config schema.
 
 ### Plugin works in Bun but fails in Node ESM
 

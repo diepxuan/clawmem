@@ -129,6 +129,7 @@ const clawmemPlugin = {
         (pluginCfg.softThresholdTokens as number | undefined) ?? DEFAULT_SOFT_THRESHOLD_TOKENS,
       reserveTokensFloor:
         (pluginCfg.reserveTokensFloor as number | undefined) ?? DEFAULT_RESERVE_TOKENS_FLOOR,
+      charsPerToken: pluginCfg.charsPerToken as number | undefined,
     };
 
     const logger = api.logger as Logger;

@@ -4,6 +4,7 @@ import {
   resolveProximityRatio,
   estimateTokensFromMessages,
   isWithinPrecompactProximity,
+  resolveCharsPerToken,
   PRECOMPACT_PROXIMITY_RATIO_DEFAULT,
   DEFAULT_CONTEXT_WINDOW_TOKENS,
   DEFAULT_SOFT_THRESHOLD_TOKENS,
@@ -119,31 +120,37 @@ describe("estimateTokensFromMessages", () => {
     expect(estimateTokensFromMessages([])).toBe(0);
   });
 
-  it("estimates from string messages", () => {
+  it("estimates from string messages (default charsPerToken=3.5)", () => {
     const messages = ["hello world", "test message"];
     const chars = "hello world".length + "test message".length;
-    expect(estimateTokensFromMessages(messages)).toBe(Math.ceil(chars / 4));
+    expect(estimateTokensFromMessages(messages)).toBe(Math.ceil(chars / 3.5));
+  });
+
+  it("estimates from string messages with explicit charsPerToken", () => {
+    const messages = ["hello world"];
+    expect(estimateTokensFromMessages(messages, 4.0)).toBe(Math.ceil(11 / 4.0));
+    expect(estimateTokensFromMessages(messages, 2.5)).toBe(Math.ceil(11 / 2.5));
   });
 
   it("estimates from object messages with content string", () => {
     const messages = [{ role: "user", content: "hello" }];
-    expect(estimateTokensFromMessages(messages as unknown[])).toBe(Math.ceil(5 / 4));
+    expect(estimateTokensFromMessages(messages as unknown[])).toBe(Math.ceil(5 / 3.5));
   });
 
   it("estimates from object messages with content array of strings", () => {
     const messages = [{ content: ["hello", " world"] }];
-    expect(estimateTokensFromMessages(messages as unknown[])).toBe(Math.ceil(11 / 4));
+    expect(estimateTokensFromMessages(messages as unknown[])).toBe(Math.ceil(11 / 3.5));
   });
 
   it("estimates from content array with text objects", () => {
     const messages = [{ content: [{ type: "text", text: "hello" }] }];
-    expect(estimateTokensFromMessages(messages as unknown[])).toBe(Math.ceil(5 / 4));
+    expect(estimateTokensFromMessages(messages as unknown[])).toBe(Math.ceil(5 / 3.5));
   });
 
   it("falls back to JSON stringify for unknown shapes", () => {
     const messages = [{ role: "user", name: "test" }];
     const jsonLen = JSON.stringify(messages[0]).length;
-    expect(estimateTokensFromMessages(messages as unknown[])).toBe(Math.ceil(jsonLen / 4));
+    expect(estimateTokensFromMessages(messages as unknown[])).toBe(Math.ceil(jsonLen / 3.5));
   });
 
   it("handles mixed message types", () => {
@@ -153,7 +160,52 @@ describe("estimateTokensFromMessages", () => {
       { content: [{ type: "text", text: "text part" }] },
     ];
     const chars = "plain string".length + "object content".length + "text part".length;
-    expect(estimateTokensFromMessages(messages as unknown[])).toBe(Math.ceil(chars / 4));
+    expect(estimateTokensFromMessages(messages as unknown[])).toBe(Math.ceil(chars / 3.5));
+  });
+});
+
+// =============================================================================
+// resolveCharsPerToken
+// =============================================================================
+
+describe("resolveCharsPerToken", () => {
+  it("returns default for undefined modelId", () => {
+    expect(resolveCharsPerToken(undefined)).toBe(3.5);
+  });
+
+  it("returns default for empty string", () => {
+    expect(resolveCharsPerToken("")).toBe(3.5);
+  });
+
+  it("detects OpenAI models", () => {
+    expect(resolveCharsPerToken("gpt-3.5-turbo")).toBe(4.0);
+    expect(resolveCharsPerToken("gpt-4o")).toBe(4.0);
+    expect(resolveCharsPerToken("openai/gpt-4")).toBe(4.0);
+  });
+
+  it("detects Claude models", () => {
+    expect(resolveCharsPerToken("claude-3-opus")).toBe(3.4);
+    expect(resolveCharsPerToken("anthropic/claude-sonnet")).toBe(3.4);
+  });
+
+  it("detects Qwen models", () => {
+    expect(resolveCharsPerToken("qwen2.5-72b")).toBe(2.5);
+    expect(resolveCharsPerToken("qwen-plus")).toBe(2.5);
+  });
+
+  it("detects Llama models", () => {
+    expect(resolveCharsPerToken("llama-3.1-70b")).toBe(3.2);
+    expect(resolveCharsPerToken("llama3")).toBe(3.2);
+  });
+
+  it("returns default for unknown models", () => {
+    expect(resolveCharsPerToken("some-unknown-model")).toBe(3.5);
+  });
+
+  it("case-insensitive matching", () => {
+    expect(resolveCharsPerToken("GPT-4O")).toBe(4.0);
+    expect(resolveCharsPerToken("CLAUDE-3")).toBe(3.4);
+    expect(resolveCharsPerToken("QWEN2.5")).toBe(2.5);
   });
 });
 
