@@ -482,6 +482,6 @@ This plugin uses `import.meta.url` to derive `__dirname` in ESM. Avoid relying o
 
 ## Release notes
 
-Current package metadata version: `0.10.2`.
+Current package metadata version: `0.0.1`.
 
 This README documents the plugin architecture and operational behavior for the initial public project documentation branch.
