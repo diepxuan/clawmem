@@ -1,51 +1,65 @@
-# USER.md - Kỳ vọng của Sếp trong dự án
+# USER.md - About Your Human
 
-Tài liệu này ghi lại kỳ vọng ổn định dành cho AI agent làm việc với Sếp trong repository này.
+## 1. Basic Identity
 
-## Người dùng chính
+| Thuộc tính | Giá trị |
+|------------|---------|
+| **Name** | Duc Tran |
+| **Xưng hô** | Sếp |
+| **Pronouns** | Anh |
+| **Timezone** | Asia/Saigon |
 
-Tên: Duc Tran
-Cách gọi: Sếp
-Timezone: Asia/Saigon
-Ngôn ngữ báo cáo: tiếng Việt có dấu
-Phong cách mong muốn: ngắn gọn, kỹ thuật, trực tiếp, không filler.
+---
 
-## Kỳ vọng khi làm việc
+## 2. Working Style
 
-Sếp yêu cầu:
+- Nhanh, gọn, trọng tâm
+- Không lan man, không emoji
+- Chỉ tiếng Việt có dấu
+- Trả lời ngắn gọn, kỹ thuật, trực tiếp, không filler
 
-- Tuân thủ Git nghiêm ngặt.
-- Làm theo workflow branch -> commit -> PR.
-- Không merge nếu chưa được lệnh rõ.
-- Không force-push nếu chưa được lệnh rõ.
-- Không commit local state hoặc secret.
-- Cập nhật tài liệu cùng với thay đổi code/config/workflow.
-- Báo cáo validation rõ ràng, bao gồm cả phần chưa chạy được và lý do.
+---
 
-## Format báo cáo khi xong việc
+## 3. Technical Profile
 
-Báo cáo nên có:
+- Developer thiên về hệ thống và backend
+- Quan tâm: Git workflow, documentation, kiểm soát production
+- Ưu tiên: Hiệu suất, tính ổn định, quy trình rõ ràng
 
-- Branch.
-- Commit SHA và commit message.
-- PR link nếu có tạo/cập nhật PR.
-- File đã đổi.
-- Validation đã chạy.
-- Trạng thái PR/checks nếu có.
-- Rủi ro hoặc untracked files còn lại.
+---
 
-## Ranh giới quyết định
+## 4. Git Discipline
 
-Hỏi Sếp trước khi:
+- Không tự ý push / tạo PR / merge
+- Không force-push nếu chưa được lệnh rõ
+- Mỗi task = 1 branch = 1 PR
+- Không merge nếu chưa được lệnh rõ
 
-- Mở rộng scope task.
-- Tạo PR ngoài yêu cầu.
-- Đổi release/version strategy.
-- Xóa file/thư mục lớn.
-- Đụng credential, deployment config, hoặc hạ tầng không liên quan.
+---
 
-Không cần hỏi lại khi task đã rõ và rủi ro thấp. Thực hiện, kiểm chứng, rồi báo cáo.
+## 5. Expectations
 
-## Kỳ vọng riêng của repository
+- Tuân thủ Git nghiêm ngặt
+- Không commit local state hoặc secret
+- Cập nhật tài liệu cùng với thay đổi code
+- Báo cáo validation rõ ràng (cả phần chưa chạy được)
 
-Repository này phải dùng được cho AI agent khác. Vì vậy tài liệu phải rõ ràng, nhất quán, có tiếng Việt có dấu, và không phụ thuộc vào giả định local/private.
+### Format báo cáo
+
+- Branch, commit SHA, message
+- PR link (nếu có)
+- File đã đổi, validation đã chạy
+- Trạng thái checks
+- Rủi ro hoặc untracked files còn lại
+
+---
+
+## 6. Decision Boundary
+
+- Sếp là cấp quyết định cuối cùng
+- Hỏi trước khi: mở rộng scope, đổi release strategy, xóa file lớn, đụng credential
+- Không cần hỏi lại khi task đã rõ và rủi ro thấp
+
+---
+
+Sếp yêu cầu: Chỉ tiếng Việt có dấu, kỷ luật tuyệt đối với SOUL.md.
