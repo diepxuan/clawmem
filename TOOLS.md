@@ -1,10 +1,10 @@
-# TOOLS.md - Repository Tooling Notes
+# TOOLS.md - Ghi chú công cụ của repository
 
-This file records tool and validation notes for agents working in this repository.
+Tài liệu này ghi lại công cụ, command, và validation dành cho AI agent làm việc trong repository này.
 
-## Repository tools observed
+## Công cụ đã thấy trong môi trường hiện tại
 
-Available in the current maintenance environment:
+Có thể dùng:
 
 - `git`
 - `gh`
@@ -12,14 +12,14 @@ Available in the current maintenance environment:
 - `npm`
 - `systemctl`
 
-Not guaranteed in every environment:
+Không mặc định có ở mọi môi trường:
 
 - `bun`
 - `clawmem`
 - TypeScript compiler config
 - OpenClaw plugin validator
 
-Always check before relying on a tool:
+Luôn kiểm tra trước khi phụ thuộc vào tool:
 
 ```bash
 command -v gh || true
@@ -31,62 +31,62 @@ command -v clawmem || true
 
 ## GitHub workflow
 
-Use `gh` when authenticated:
+Nếu `gh` đã auth, dùng:
 
 ```bash
 gh auth status
 gh pr view --json number,state,url,headRefName,baseRefName,mergeable,mergeStateStatus,statusCheckRollup
 ```
 
-If `gh pr edit` fails due to GitHub Projects GraphQL issues, use REST via `gh api`.
+Nếu `gh pr edit` lỗi do GitHub Projects GraphQL, dùng REST qua `gh api` để patch PR metadata.
 
-## Documentation validation
+## Validation tài liệu
 
-For docs-only changes:
+Với thay đổi docs-only:
 
 ```bash
 git diff --check
 git status --short --branch
 ```
 
-Review Markdown for:
+Review Markdown để đảm bảo:
 
-- No secrets.
-- No placeholder values presented as real config.
-- No contradiction between `AGENTS.md`, `SOUL.md`, `IDENTITY.md`, `USER.md`, `TOOLS.md`, and `HEARTBEAT.md`.
-- No requirement to commit `.openclaw/` local state.
+- Không có secret.
+- Không có placeholder giả làm config thật.
+- Không mâu thuẫn giữa `AGENTS.md`, `SOUL.md`, `IDENTITY.md`, `USER.md`, `TOOLS.md`, `HEARTBEAT.md`.
+- Không yêu cầu commit `.openclaw/` hoặc local state.
 
-## TypeScript/plugin validation
+## Validation TypeScript/plugin
 
-The repository currently has TypeScript source files but no committed TypeScript project config.
+Repo hiện có TypeScript source nhưng chưa có đầy đủ project config ở mọi nhánh.
 
-If adding or changing TypeScript code, prefer the strongest available validation:
+Khi sửa code TypeScript, dùng validation mạnh nhất có sẵn:
 
 ```bash
 npx tsc --noEmit
 ```
 
-If no TypeScript setup exists, report that type-checking is unavailable and run whatever syntax/project validation is available from the OpenClaw host.
+Nếu chưa có TypeScript setup, báo rõ type-check chưa chạy được và chạy validator khác nếu OpenClaw cung cấp.
 
-## ClawMem runtime checks
+## Kiểm tra runtime ClawMem
 
-The plugin depends on an external `clawmem` binary. When available, basic checks are:
+Plugin phụ thuộc binary `clawmem` bên ngoài. Khi binary có sẵn, kiểm tra cơ bản:
 
 ```bash
 clawmem --help
 clawmem serve --port 7438
 ```
 
-Do not treat missing `clawmem` in a documentation-only PR as a blocker. Report it as an environment limitation.
+Nếu thiếu `clawmem`, không coi đó là blocker cho PR tài liệu. Báo là giới hạn môi trường.
 
-## Local files policy
+## Chính sách file local
 
-`.openclaw/` is local runtime state and must stay ignored.
+`.openclaw/` là local runtime state và phải được ignore.
 
-Do not commit:
+Không commit:
 
-- Tokens/API keys.
+- Token/API key.
 - Local session state.
-- Personal memory dumps.
-- Generated dependency folders.
+- Memory cá nhân.
+- Dependency folder sinh ra.
 - Runtime logs.
