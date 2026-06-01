@@ -2,18 +2,23 @@
   "id": "clawmem",
   "kind": "memory",
   "activation": {
-    "onCapabilities": ["hook", "tool"]
+    "onCapabilities": ["tool"]
   },
   "uiHints": {
-    "clawmemBin": {
-      "label": "ClawMem Binary Path",
-      "placeholder": "/usr/local/bin/clawmem",
-      "help": "Path to clawmem binary. Auto-detected from PATH if not set."
+    "apiBaseUrl": {
+      "label": "ClawMem API Base URL",
+      "placeholder": "http://127.0.0.1:7438",
+      "help": "Base URL of an already-running ClawMem REST API. The plugin never starts a binary."
+    },
+    "apiToken": {
+      "label": "ClawMem API Token",
+      "help": "Optional bearer token. If omitted, CLAWMEM_API_TOKEN from the environment is used.",
+      "advanced": true
     },
     "tokenBudget": {
       "label": "Context Token Budget",
       "placeholder": "800",
-      "help": "Max tokens for context surfacing injection (default: 800)"
+      "help": "Metadata budget hint retained for compatibility (default: 800)"
     },
     "profile": {
       "label": "Retrieval Profile",
@@ -21,61 +26,18 @@
     },
     "enableTools": {
       "label": "Register Agent Tools",
-      "help": "Register ClawMem retrieval tools for agent-initiated queries"
-    },
-    "servePort": {
-      "label": "REST API Port",
-      "placeholder": "7438",
-      "help": "Port for ClawMem HTTP REST API (used by tools)",
-      "advanced": true
-    },
-    "gpuEmbed": {
-      "label": "Embedding Endpoint",
-      "placeholder": "http://localhost:8088",
-      "help": "URL for granite-embed embedding service",
-      "advanced": true
-    },
-    "gpuLlm": {
-      "label": "LLM Endpoint",
-      "placeholder": "http://localhost:8089",
-      "help": "URL for ClawMem LLM (query expansion, extraction)",
-      "advanced": true
-    },
-    "gpuLlmModel": {
-      "label": "LLM Model",
-      "placeholder": "qwen3",
-      "help": "Model name sent to the configured LLM endpoint",
-      "advanced": true
-    },
-    "gpuLlmReasoningEffort": {
-      "label": "Reasoning Effort",
-      "placeholder": "(unset)",
-      "help": "Optional top-level reasoning_effort for Chat Completions endpoints that support it. Unset omits the field.",
-      "advanced": true
-    },
-    "gpuLlmNoThink": {
-      "label": "Append /no_think",
-      "help": "Append /no_think to remote LLM prompts (default: true). Disable for standard OpenAI models.",
-      "advanced": true
-    },
-    "gpuRerank": {
-      "label": "Reranker Endpoint",
-      "placeholder": "http://localhost:8090",
-      "help": "URL for reranking service",
-      "advanced": true
-    },
-    "charsPerToken": {
-      "label": "Chars Per Token",
-      "placeholder": "3.5",
-      "help": "Heuristic for token estimation: ~4.0 OpenAI, ~3.4 Claude, ~2.5 Qwen, ~3.2 Llama. Default 3.5.",
-      "advanced": true
+      "help": "Register ClawMem retrieval tools for agent-initiated API queries"
     }
   },
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "clawmemBin": {
+      "apiBaseUrl": {
+        "type": "string",
+        "default": "http://127.0.0.1:7438"
+      },
+      "apiToken": {
         "type": "string"
       },
       "tokenBudget": {
@@ -89,57 +51,6 @@
       },
       "enableTools": {
         "type": "boolean"
-      },
-      "servePort": {
-        "type": "number",
-        "minimum": 1024,
-        "maximum": 65535
-      },
-      "gpuEmbed": {
-        "type": "string"
-      },
-      "gpuLlm": {
-        "type": "string"
-      },
-      "gpuLlmModel": {
-        "type": "string"
-      },
-      "gpuLlmReasoningEffort": {
-        "type": "string",
-        "enum": ["none", "minimal", "low", "medium", "high", "xhigh"]
-      },
-      "gpuLlmNoThink": {
-        "type": "boolean"
-      },
-      "gpuRerank": {
-        "type": "string"
-      },
-      "compactionContextWindow": {
-        "type": "number",
-        "minimum": 1000,
-        "description": "Override the conservative 200K default context window tokens"
-      },
-      "precompactProximityRatio": {
-        "type": "number",
-        "minimum": 0.5,
-        "maximum": 0.95,
-        "description": "Override the proximity ratio for precompact gate (clamped to [0.5, 0.95])"
-      },
-      "softThresholdTokens": {
-        "type": "number",
-        "minimum": 0,
-        "description": "Soft threshold tokens (matches MemoryFlushPlan.softThresholdTokens)"
-      },
-      "reserveTokensFloor": {
-        "type": "number",
-        "minimum": 0,
-        "description": "Reserve floor tokens (matches MemoryFlushPlan.reserveTokensFloor)"
-      },
-      "charsPerToken": {
-        "type": "number",
-        "minimum": 1.0,
-        "maximum": 10.0,
-        "description": "Chars-per-token heuristic for token estimation (default: 3.5). Use ~4.0 for OpenAI, ~3.4 for Claude, ~2.5 for Qwen."
       }
     }
   }

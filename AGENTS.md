@@ -27,10 +27,10 @@ Repo này chỉ chứa OpenClaw plugin adapter.
 
 - Đăng ký OpenClaw plugin
 - Tích hợp memory capability
-- Xử lý lifecycle hooks
+- Không xử lý lifecycle hooks; chỉ gọi ClawMem API
 - Đăng ký agent tools
 - Gọi REST API local của ClawMem
-- Resolve transcript/session path
+- Không resolve transcript/session path trong plugin API-only
 - Viết tài liệu (install, config, troubleshoot, handoff)
 
 ### KHÔNG làm khi chưa được Sếp cho phép

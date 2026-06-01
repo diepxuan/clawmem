@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createTools } from "./tools.js";
-import type { ClawMemConfig } from "./shell.js";
+import type { ClawMemConfig } from "./api.js";
 
 // =============================================================================
 // Test setup — mock fetch for REST API simulation
@@ -14,12 +14,10 @@ const mockLogger = {
 };
 
 const mockConfig: ClawMemConfig = {
-  clawmemBin: "clawmem",
+  apiBaseUrl: "http://127.0.0.1:7438",
   tokenBudget: 800,
   profile: "balanced",
   enableTools: true,
-  servePort: 7438,
-  env: {},
 };
 
 const defaultCfg = {

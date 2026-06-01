@@ -12,16 +12,15 @@ Last updated: 2026-06-01
 
 | ID | Task | Details | Files |
 | --- | --- | --- | --- |
-| T1 | Keep README current | README should stay aligned with config schema, tools, hooks, and service behavior. | `README.md`, `openclaw.plugin.json`, `tools.ts`, `engine.ts` |
+| T1 | Keep README current | README should stay aligned with config schema, API tools, and API readiness behavior. | `README.md`, `openclaw.plugin.json`, `tools.ts`, `api.ts` |
 | T2 | ~~Define OpenClaw compatibility range~~ | Completed — added `docs/COMPATIBILITY.md` |
 
 ## Nice to have
 
 | ID | Task | Details | Files |
 | --- | --- | --- | --- |
-| T4 | Improve token estimation | `estimateTokensFromMessages` uses a chars/4 heuristic. Consider model-aware estimation if needed. | `compaction-threshold.ts` |
-| T5 | Add integration tests | Use a mock `clawmem serve` and verify tool calls plus lifecycle hook flows. | test suite |
-| T6 | Add service readiness handling | Check whether `clawmem serve` exposes or should expose a health endpoint before tools depend on it. | `shell.ts`, upstream ClawMem runtime |
+| T5 | Add integration tests | Use a mock external ClawMem API and verify tool calls plus error handling. | test suite |
+| T6 | Add service readiness handling | Check whether the external ClawMem API exposes a stable health endpoint before tools depend on it. | `api.ts`, upstream ClawMem runtime |
 
 ## Open questions
 
