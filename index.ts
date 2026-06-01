@@ -26,10 +26,12 @@ import { ClawMemMemorySearchManager } from "./manager.js";
 
 const configSchema = Type.Object(
   {
-    apiBaseUrl: Type.String({
-      description: "Base URL of the running ClawMem REST API",
-      default: "http://127.0.0.1:7438",
-    }),
+    apiBaseUrl: Type.Optional(
+      Type.String({
+        description: "Base URL of the running ClawMem REST API",
+        default: "http://127.0.0.1:7438",
+      }),
+    ),
     apiToken: Type.Optional(
       Type.String({ description: "Bearer token for the ClawMem API" }),
     ),
@@ -110,6 +112,7 @@ const clawmemPlugin = defineToolPlugin({
           const logger = api.logger as Logger;
           const cfg = buildCfg(config as Record<string, unknown>);
           const mgr = getOrCreateManager(cfg, logger);
+          if (!cfg.enableTools) return null;
           const runtimeTool = createTools(cfg, logger, {
             includeStandard: true,
             includeLegacy: true,
@@ -156,44 +159,48 @@ clawmemPlugin.register = (api: any) => {
   });
 
   // --- 2. Corpus supplement (memory_search corpus=all) ---
-  api.registerMemoryCorpusSupplement("clawmem", {
-    async search(p: any) {
-      const r = await apiCall(cfg, "POST", "/search", {
-        query: p.query,
-        mode: "auto",
-        limit: p.maxResults ?? 10,
-        compact: true,
-      });
-      if (!r.ok || !r.data?.results) return [];
-      return r.data.results.map((x: any) => ({
-        corpus: "clawmem",
-        path: x.path ?? x.title ?? "unknown",
-        title: x.title,
-        kind: x.contentType ?? "note",
-        score: x.score ?? 0,
-        snippet: x.snippet ?? (x.body ?? "").slice(0, 300),
-      }));
-    },
-    async get(p: any) {
-      const r = await apiCall(cfg, "GET", `/documents/${p.lookup}`);
-      if (!r.ok) return null;
-      const d = r.data;
-      const body = d.body ?? "";
-      const lines = body.split("\n");
-      const from = p.fromLine ?? 1;
-      const count = p.lineCount ?? lines.length;
-      const sliced = lines.slice(from - 1, from - 1 + count);
-      return {
-        corpus: "clawmem",
-        path: d.path ?? p.lookup,
-        title: d.title,
-        kind: d.contentType ?? "note",
-        content: sliced.join("\n"),
-        fromLine: from,
-        lineCount: sliced.length,
-      };
-    },
-  });
+  if (typeof api.registerMemoryCorpusSupplement === "function") {
+    api.registerMemoryCorpusSupplement("clawmem", {
+      async search(p: any) {
+        const r = await apiCall(cfg, "POST", "/search", {
+          query: p.query,
+          mode: "auto",
+          limit: p.maxResults ?? 10,
+          compact: true,
+        });
+        if (!r.ok || !r.data?.results) return [];
+        return r.data.results.map((x: any) => ({
+          corpus: "clawmem",
+          path: x.path ?? x.title ?? "unknown",
+          title: x.title,
+          kind: x.contentType ?? "note",
+          score: x.score ?? 0,
+          snippet: x.snippet ?? (x.body ?? "").slice(0, 300),
+        }));
+      },
+      async get(p: any) {
+        const r = await apiCall(cfg, "GET", `/documents/${p.lookup}`);
+        if (!r.ok) return null;
+        const d = r.data;
+        const body = d.body ?? "";
+        const lines = body.split("\n");
+        const from = p.fromLine ?? 1;
+        const count = p.lineCount ?? lines.length;
+        const sliced = lines.slice(from - 1, from - 1 + count);
+        return {
+          corpus: "clawmem",
+          path: d.path ?? p.lookup,
+          title: d.title,
+          kind: d.contentType ?? "note",
+          content: sliced.join("\n"),
+          fromLine: from,
+          lineCount: sliced.length,
+        };
+      },
+    });
+  } else {
+    logger.warn("clawmem: memory corpus supplement API unavailable; skipping corpus=all integration");
+  }
 
   // --- 3. API readiness service ---
   api.registerService({
@@ -269,7 +276,12 @@ async function apiCall(
       body: body ? JSON.stringify(body) : undefined,
       signal: AbortSignal.timeout(5000),
     });
-    const data = await resp.json();
+    let data: unknown;
+    try {
+      data = await resp.json();
+    } catch {
+      data = {};
+    }
     return { ok: resp.ok, status: resp.status, data };
   } catch (err) {
     return {

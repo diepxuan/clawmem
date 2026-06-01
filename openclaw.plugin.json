@@ -48,9 +48,6 @@
   },
   "configSchema": {
     "type": "object",
-    "required": [
-      "apiBaseUrl"
-    ],
     "properties": {
       "apiBaseUrl": {
         "type": "string",
