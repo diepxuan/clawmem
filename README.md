@@ -1,72 +1,72 @@
 # ClawMem OpenClaw Plugin
 
-ClawMem OpenClaw Plugin là plugin bộ nhớ kết nối agent OpenClaw với runtime ClawMem cục bộ. Plugin đăng ký ClawMem như một tiện ích mở rộng loại `kind: "memory"` của OpenClaw, cung cấp công cụ truy xuất cho agent, chạy các móc vòng đời để trích xuất bộ nhớ, và có thể khởi động dịch vụ REST API ClawMem mà các công cụ sử dụng.
+ClawMem OpenClaw Plugin is a memory plugin adapter that connects OpenClaw agents to a local ClawMem runtime. It registers ClawMem as an OpenClaw `kind: "memory"` extension, exposes retrieval tools to agents, runs lifecycle hooks for memory extraction, and can start the ClawMem REST API service used by the tools.
 
-Plugin được thiết kế theo hướng mở rộng khi lỗi: khi tệp thực thi ClawMem hoặc REST API không khả dụng, quá trình thực thi agent vẫn tiếp tục và plugin ghi cảnh báo thay vì làm gãy phiên OpenClaw.
+The plugin is intentionally fail-open: when the ClawMem binary or REST API is unavailable, agent execution should continue and the plugin logs warnings instead of breaking the OpenClaw turn.
 
-## Mục đích
+## Purpose
 
-Repository này chỉ chứa adapter plugin OpenClaw. Engine bộ nhớ thực tế được cung cấp bởi tệp thực thi `clawmem` bên ngoài.
+This repository contains only the OpenClaw plugin adapter. The actual memory engine is provided by the external `clawmem` binary.
 
-Adapter xử lý:
+The adapter handles:
 
-- Đăng ký plugin OpenClaw.
-- Đăng ký khả năng bộ nhớ qua `api.registerMemoryCapability()`.
-- Tích hợp móc vòng đời để đưa ngữ cảnh vào prompt lúc xây dựng và trích xuất sau phiên.
-- Đăng ký công cụ agent để tìm kiếm và đọc bộ nhớ ClawMem.
-- Vòng đời dịch vụ REST API qua `clawmem serve`.
-- Giải quyết đường dẫn bản ghi cho các file JSONL phiên OpenClaw.
-- Trích xuất nén dự phòng khi cuộc hội thoại tiến gần ngưỡng nén.
+- OpenClaw plugin registration.
+- Memory capability registration through `api.registerMemoryCapability()`.
+- Lifecycle hook integration for prompt-time context surfacing and post-turn extraction.
+- Agent tool registration for searching and reading ClawMem memory.
+- REST API service lifecycle via `clawmem serve`.
+- Transcript path resolution for OpenClaw session JSONL files.
+- Pre-emptive precompact extraction when a conversation approaches the compaction threshold.
 
-## Bố cục repository
+## Repository layout
 
 ```text
 .
-├── index.ts                  # Điểm vào plugin OpenClaw
-├── engine.ts                 # Bộ xử lý móc vòng đời
-├── tools.ts                  # Định nghĩa công cụ agent và client REST API
-├── shell.ts                  # Phân giải tệp thực thi clawmem, thực thi móc, khởi động dịch vụ
-├── session-state.ts          # Trạng thái bootstrap và ngữ cảnh theo phiên
-├── transcript-resolver.ts    # Trình phân giải đường dẫn bản ghi OpenClaw
-├── compaction-threshold.ts   # Logic ngưỡng và ước lượng token trước khi nén
-├── openclaw.plugin.json      # Bản kê plugin và lược đồ cấu hình
-├── package.json              # Siêu dữ liệu gói
-└── README.md                 # Tài liệu dự án
+├── index.ts                  # OpenClaw plugin entry point
+├── engine.ts                 # Lifecycle hook handlers
+├── tools.ts                  # Agent tool definitions and REST API client
+├── shell.ts                  # clawmem binary resolution, hook execution, service spawn
+├── session-state.ts          # Session-scoped bootstrap/context state
+├── transcript-resolver.ts    # OpenClaw transcript path resolver
+├── compaction-threshold.ts   # Precompact threshold and token estimation logic
+├── openclaw.plugin.json      # Plugin manifest and config schema
+├── package.json              # Package metadata
+└── README.md                 # Project documentation
 ```
 
-## Yêu cầu
+## Requirements
 
-Yêu cầu runtime:
+Runtime requirements:
 
-- Plugin host OpenClaw.
-- Runtime Node.js tương thích với nạp plugin TypeScript/ESM mà OpenClaw sử dụng.
-- Tệp thực thi `clawmem` đã cài đặt hoặc cấu hình với đường dẫn rõ ràng.
-- GPU hoặc điểm cuối từ xa tùy chọn cho embedding, trích xuất LLM, và xếp hạng lại.
+- OpenClaw plugin host.
+- Node.js runtime compatible with TypeScript/ESM plugin loading used by OpenClaw.
+- `clawmem` binary installed or configured with an explicit path.
+- Optional GPU/remote endpoints for embedding, LLM extraction, and reranking.
 
-Yêu cầu phát triển:
+Development requirements:
 
 - Git.
 - Node.js.
-- Môi trường phát triển OpenClaw có khả năng xử lý TypeScript.
+- A TypeScript-capable OpenClaw development environment.
 
-Repository này không bao gồm tệp thực thi ClawMem. Cài đặt hoặc xây dựng `clawmem` riêng, sau đó đưa vào qua một trong các đường phân giải nhị phân được hỗ trợ.
+This repository does not vendor the ClawMem binary. Install or build `clawmem` separately, then expose it through one of the supported binary resolution paths.
 
-## Phân giải tệp thực thi
+## Binary resolution
 
-Plugin phân giải tệp thực thi `clawmem` theo thứ tự:
+The plugin resolves the `clawmem` binary in this order:
 
-1. `clawmemBin` từ cấu hình plugin, khi được đặt và file tồn tại.
-2. Đường dẫn tương đối trong repo dùng cho bố cục phát triển ClawMem.
+1. `clawmemBin` from plugin config, when set and the file exists.
+2. A repo-relative path used by ClawMem development layouts.
 3. `/usr/local/bin/clawmem`.
 4. `$HOME/Projects/forge-stack/skill-forge/clawmem/bin/clawmem`.
 5. `$HOME/clawmem/bin/clawmem`.
-6. Dự phòng: `clawmem` từ `PATH`.
+6. Fallback to `clawmem` from `PATH`.
 
-Khuyến nghị production: đặt `clawmemBin` rõ ràng để tránh phụ thuộc vào PATH hoặc các đường dẫn đặc thù phát triển.
+Recommended production configuration: set `clawmemBin` explicitly to avoid depending on PATH or development-specific paths.
 
-## Bản kê plugin OpenClaw
+## OpenClaw plugin manifest
 
-Bản kê plugin nằm ở `openclaw.plugin.json`:
+The plugin manifest is `openclaw.plugin.json`:
 
 ```json
 {
@@ -75,7 +75,7 @@ Bản kê plugin nằm ở `openclaw.plugin.json`:
 }
 ```
 
-Plugin kích hoạt qua móc và khả năng công cụ:
+The plugin activates on hook and tool capabilities:
 
 ```json
 {
@@ -85,17 +85,17 @@ Plugin kích hoạt qua móc và khả năng công cụ:
 }
 ```
 
-## Cấu hình
+## Configuration
 
-Plugin chấp nhận các trường cấu hình sau.
+The plugin accepts the following configuration fields.
 
 ### `clawmemBin`
 
-Kiểu: chuỗi
+Type: string
 
-Đường dẫn tới tệp thực thi `clawmem`. Nếu không đặt, plugin dùng thứ tự phân giải nhị phân ở trên.
+Path to the `clawmem` binary. If unset, the plugin uses the binary resolution order above.
 
-Ví dụ:
+Example:
 
 ```json
 {
@@ -105,116 +105,116 @@ Ví dụ:
 
 ### `tokenBudget`
 
-Kiểu: số
-Mặc định: tùy hồ sơ
-Tối thiểu: 100
-Tối đa: 4000
+Type: number
+Default: profile-dependent
+Minimum: 100
+Maximum: 4000
 
-Ngân sách token tối đa cho ngữ cảnh đưa vào prompt.
+Maximum token budget for context surfaced into the prompt.
 
 ### `profile`
 
-Kiểu: chuỗi
-Giá trị cho phép: `speed`, `balanced`, `deep`
-Mặc định: `balanced`
+Type: string
+Allowed values: `speed`, `balanced`, `deep`
+Default: `balanced`
 
-Các preset hồ sơ:
+Profile presets:
 
-| Hồ sơ | Ngân sách |
+| Profile | Budget |
 | --- | ---: |
-| `speed` | 400 token |
-| `balanced` | 800 token |
-| `deep` | 1200 token |
+| `speed` | 400 tokens |
+| `balanced` | 800 tokens |
+| `deep` | 1200 tokens |
 
 ### `enableTools`
 
-Kiểu: boolean
-Mặc định: true
+Type: boolean
+Default: true
 
-Kiểm soát việc plugin có đăng ký công cụ ClawMem cho agent hay không.
+Controls whether the plugin registers agent-facing ClawMem tools.
 
 ### `servePort`
 
-Kiểu: số
-Mặc định: 7438
-Tối thiểu: 1024
-Tối đa: 65535
+Type: number
+Default: 7438
+Minimum: 1024
+Maximum: 65535
 
-Cổng cục bộ dùng cho `clawmem serve` và client REST của công cụ.
+Local port used by `clawmem serve` and the tool REST client.
 
 ### `gpuEmbed`
 
-Kiểu: chuỗi
+Type: string
 
-URL điểm cuối embedding. Truyền tới tiến trình ClawMem dưới dạng `CLAWMEM_EMBED_URL`.
+Embedding endpoint URL. Passed to the ClawMem process as `CLAWMEM_EMBED_URL`.
 
 ### `gpuLlm`
 
-Kiểu: chuỗi
+Type: string
 
-URL điểm cuối LLM. Truyền dưới dạng `CLAWMEM_LLM_URL`.
+LLM endpoint URL. Passed as `CLAWMEM_LLM_URL`.
 
 ### `gpuLlmModel`
 
-Kiểu: chuỗi
+Type: string
 
-Tên model gửi tới điểm cuối LLM đã cấu hình. Truyền dưới dạng `CLAWMEM_LLM_MODEL`.
+Model name sent to the configured LLM endpoint. Passed as `CLAWMEM_LLM_MODEL`.
 
 ### `gpuLlmReasoningEffort`
 
-Kiểu: chuỗi
-Giá trị cho phép: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`
+Type: string
+Allowed values: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`
 
-Giá trị `reasoning_effort` tùy chọn ở cấp cao nhất cho các điểm cuối Chat Completions tương thích. Truyền dưới dạng `CLAWMEM_LLM_REASONING_EFFORT`.
+Optional top-level `reasoning_effort` value for compatible Chat Completions endpoints. Passed as `CLAWMEM_LLM_REASONING_EFFORT`.
 
 ### `gpuLlmNoThink`
 
-Kiểu: boolean
+Type: boolean
 
-Kiểm soát việc ClawMem có thêm `/no_think` vào prompt LLM từ xa hay không. Truyền dưới dạng `CLAWMEM_LLM_NO_THINK`.
+Controls whether ClawMem appends `/no_think` to remote LLM prompts. Passed as `CLAWMEM_LLM_NO_THINK`.
 
 ### `gpuRerank`
 
-Kiểu: chuỗi
+Type: string
 
-URL điểm cuối xếp hạng lại. Truyền dưới dạng `CLAWMEM_RERANK_URL`.
+Reranker endpoint URL. Passed as `CLAWMEM_RERANK_URL`.
 
 ### `compactionContextWindow`
 
-Kiểu: số
-Mặc định: 200000
-Tối thiểu: 1000
+Type: number
+Default: 200000
+Minimum: 1000
 
-Ghi đè cửa sổ ngữ cảnh mặc định 200K token. Plugin dùng giá trị này làm cơ sở tính ngưỡng nén.
+Override the conservative 200K default context window tokens. The plugin uses this as the base value for computing the compaction threshold.
 
 ### `precompactProximityRatio`
 
-Kiểu: số
-Mặc định: 0.85
-Tối thiểu: 0.5
-Tối đa: 0.95
+Type: number
+Default: 0.85
+Minimum: 0.5
+Maximum: 0.95
 
-Ghi đè tỉ lệ proximity cho cổng trước nén. Giá trị bị kẹp trong khoảng `[0.5, 0.95]` để tránh cấu hình sai làm vô hiệu hóa trước nén hoàn toàn hoặc kích hoạt ở mỗi phiên. Cũng có thể đặt qua biến môi trường `CLAWMEM_PRECOMPACT_PROXIMITY_RATIO`.
+Override the proximity ratio for the precompact gate. Values are clamped to `[0.5, 0.95]` to prevent misconfiguration from disabling precompact entirely or firing on every turn. Can also be set via the environment variable `CLAWMEM_PRECOMPACT_PROXIMITY_RATIO`.
 
 ### `softThresholdTokens`
 
-Kiểu: số
-Mặc định: 4000
-Tối thiểu: 0
+Type: number
+Default: 4000
+Minimum: 0
 
-Ngưỡng token mềm, khớp với `MemoryFlushPlan.softThresholdTokens` trong OpenClaw. Bị trừ khỏi cửa sổ ngữ cảnh cùng với sàn dự trữ.
+Soft threshold tokens, matching `MemoryFlushPlan.softThresholdTokens` in OpenClaw. Subtracted from the context window along with the reserve floor.
 
 ### `reserveTokensFloor`
 
-Kiểu: số
-Mặc định: 8000
-Tối thiểu: 0
+Type: number
+Default: 8000
+Minimum: 0
 
-Sàn token dự trữ, khớp với `MemoryFlushPlan.reserveTokensFloor` trong OpenClaw. Bị trừ khỏi cửa sổ ngữ cảnh cùng với ngưỡng mềm.
+Reserve floor tokens, matching `MemoryFlushPlan.reserveTokensFloor` in OpenClaw. Subtracted from the context window along with the soft threshold.
 
-## Ví dụ cấu hình
+## Example configuration
 
-Cấu hình tối thiểu:
+Minimal configuration:
 
 ```json
 {
@@ -225,7 +225,7 @@ Cấu hình tối thiểu:
 }
 ```
 
-Cấu hình có GPU:
+GPU-backed configuration:
 
 ```json
 {
@@ -243,68 +243,68 @@ Cấu hình có GPU:
 }
 ```
 
-## Móc vòng đời
+## Lifecycle hooks
 
-Plugin đăng ký các móc vòng đời OpenClaw sau.
+The plugin subscribes to these OpenClaw lifecycle hooks.
 
 ### `before_prompt_build`
 
-Đây là đường chờ quan trọng nhất.
+This is the load-bearing awaited path.
 
-Trách nhiệm:
+Responsibilities:
 
-- Dọn dẹp prompt hiện tại trước khi tìm kiếm.
-- Đưa ngữ cảnh ClawMem liên quan vào prompt.
-- Tiêu thụ ngữ cảnh bootstrap phiên đã lưu ở phiên đưa vào đầu tiên.
-- Chạy trích xuất nén dự phòng khi phiên tiến gần ngưỡng nén.
+- Clean the current prompt before search.
+- Surface relevant ClawMem context into the prompt.
+- Consume cached session bootstrap context on the first surfaced turn.
+- Run pre-emptive `precompact-extract` when the session is close to the compaction threshold.
 
-Trích xuất trước nén nằm ở đây vì móc này được chờ trước khi OpenClaw xây dựng prompt hiệu dụng và trước cuộc gọi LLM có thể kích hoạt nén.
+Precompact extraction lives here because this hook is awaited before OpenClaw builds the effective prompt and before the LLM call that may trigger compaction.
 
 ### `agent_end`
 
-Móc này chạy công việc trích xuất sau phiên:
+This hook runs post-turn extraction work:
 
 - `decision-extractor`
 - `handoff-generator`
 - `feedback-loop`
 
-OpenClaw xem móc này là không chờ, nên các ghi này là nhất quán cuối cùng. Trích xuất trước nén không phải đường chính xác ở móc này.
+OpenClaw treats this hook as fire-and-forget, so these writes are eventually consistent. Precompact extraction is intentionally not load-bearing in this hook.
 
 ### `before_compaction`
 
-Dự phòng phòng thủ cho `precompact-extract`.
+Defense-in-depth fallback for `precompact-extract`.
 
-Móc này không phải đường chính xác vì có thể đua với nén. Đường chính là `before_prompt_build`.
+This hook is not the primary correctness path because it may race with compaction. The primary path is `before_prompt_build`.
 
 ### `session_start`
 
-Chạy `session-bootstrap` và lưu kết quả cho sự kiện `before_prompt_build` đầu tiên của phiên.
+Runs `session-bootstrap` and caches its output for the first `before_prompt_build` event of the session.
 
 ### `session_end`
 
-Xóa trạng thái plugin theo phiên.
+Clears per-session plugin state.
 
 ### `before_reset`
 
-Chạy đường trích xuất cuối cùng khi có thể, sau đó xóa trạng thái theo phiên.
+Runs a final extraction path when possible, then clears per-session state.
 
-## Công cụ agent
+## Agent tools
 
-Khi `enableTools` là true, plugin đăng ký các công cụ sau.
+When `enableTools` is true, the plugin registers the following tools.
 
 ### `clawmem_search`
 
-Tìm kiếm bộ nhớ dài hạn cho ngữ cảnh liên quan.
+Search long-term memory for relevant context.
 
-Tham số:
+Parameters:
 
-- `query` chuỗi, bắt buộc.
-- `mode` chuỗi, tùy chọn: `auto`, `keyword`, `semantic`, `hybrid`.
-- `collection` chuỗi, tùy chọn.
-- `limit` số, tùy chọn. Mặc định: 10.
-- `compact` boolean, tùy chọn. Mặc định: true.
+- `query` string, required.
+- `mode` string, optional: `auto`, `keyword`, `semantic`, `hybrid`.
+- `collection` string, optional.
+- `limit` number, optional. Default: 10.
+- `compact` boolean, optional. Default: true.
 
-Điểm cuối REST:
+REST endpoint:
 
 ```text
 POST /search
@@ -312,13 +312,13 @@ POST /search
 
 ### `clawmem_get`
 
-Lấy toàn bộ nội dung cho một tài liệu bộ nhớ theo id tài liệu.
+Retrieve full content for a memory document by document id.
 
-Tham số:
+Parameters:
 
-- `docid` chuỗi, bắt buộc.
+- `docid` string, required.
 
-Điểm cuối REST:
+REST endpoint:
 
 ```text
 GET /documents/:docid
@@ -326,13 +326,13 @@ GET /documents/:docid
 
 ### `clawmem_session_log`
 
-Liệt kê các tóm tắt phiên gần đây.
+List recent session summaries.
 
-Tham số:
+Parameters:
 
-- `limit` số, tùy chọn. Mặc định: 5.
+- `limit` number, optional. Default: 5.
 
-Điểm cuối REST:
+REST endpoint:
 
 ```text
 GET /sessions?limit=N
@@ -340,117 +340,117 @@ GET /sessions?limit=N
 
 ### `clawmem_timeline`
 
-Hiển thị ngữ cảnh thời gian xung quanh một tài liệu bộ nhớ.
+Show temporal context around a memory document.
 
-Cách dùng thường gặp: kiểm tra những gì xảy ra trước và sau khi tài liệu hoặc mục bộ nhớ được tạo.
+Typical use: inspect what happened before and after a document or memory entry was created.
 
 ### `clawmem_similar`
 
-Tìm tài liệu giống với một tài liệu bộ nhớ đã cho.
+Find documents similar to a given memory document.
 
-Cách dùng thường gặp: mở rộng kết quả nhớ thành ngữ cảnh liên quan lân cận.
+Typical use: expand a recall result into adjacent related context.
 
-## Dịch vụ REST API
+## REST API service
 
-Plugin đăng ký dịch vụ `clawmem-api` khởi động:
+The plugin registers a `clawmem-api` service that starts:
 
 ```bash
 clawmem serve --port <servePort>
 ```
 
-Các công cụ agent gọi API cục bộ tại:
+The agent tools call the local API at:
 
 ```text
 http://127.0.0.1:<servePort>
 ```
 
-Nếu `CLAWMEM_API_TOKEN` được đặt, client công cụ gửi nó dưới dạng:
+If `CLAWMEM_API_TOKEN` is set, the tool client sends it as:
 
 ```text
 Authorization: Bearer <token>
 ```
 
-## Phân giải bản ghi
+## Transcript resolution
 
-Một số sự kiện vòng đời OpenClaw không bao gồm đường dẫn file bản ghi. Plugin suy ra đường dẫn bản ghi từ bố cục trạng thái OpenClaw:
+Some OpenClaw lifecycle events do not include a transcript file path. The plugin derives the transcript path from OpenClaw state layout:
 
 ```text
 <state-dir>/agents/<agentId>/sessions/<sessionId>.jsonl
 ```
 
-Phân giải thư mục trạng thái tuân theo thứ tự ưu tiên tương thích OpenClaw:
+State directory resolution follows OpenClaw-compatible precedence:
 
-1. `OPENCLAW_STATE_DIR`, khi được đặt.
-2. `OPENCLAW_HOME/.openclaw`, khi `OPENCLAW_HOME` được đặt.
-3. `$HOME/.openclaw`, khi tồn tại.
-4. `$HOME/.clawdbot`, dự phòng cũ khi `.openclaw` không tồn tại.
-5. `$HOME/.openclaw`, mặc định tổng hợp.
+1. `OPENCLAW_STATE_DIR`, when set.
+2. `OPENCLAW_HOME/.openclaw`, when `OPENCLAW_HOME` is set.
+3. `$HOME/.openclaw`, when it exists.
+4. `$HOME/.clawdbot`, legacy fallback when `.openclaw` does not exist.
+5. `$HOME/.openclaw`, synthesized default.
 
-Trình phân giải hoạt động theo hướng mở rộng khi lỗi và trả về không có đường dẫn bản ghi khi file phân giải không tồn tại hoặc id phiên không hợp lệ.
+The resolver is fail-open and returns no transcript path when the resolved file does not exist or the session id is invalid.
 
-## Hành vi nén
+## Compaction behavior
 
-Plugin chạy trích xuất trước nén dự phòng khi ước lượng token phiên tiến gần ngưỡng nén OpenClaw.
+The plugin runs pre-emptive precompact extraction when estimated session tokens approach the OpenClaw compaction threshold.
 
-Đầu vào ngưỡng mặc định:
+Default threshold inputs:
 
-- Cửa sổ ngữ cảnh: 200.000 token.
-- Sàn dự trữ: 8.000 token.
-- Ngưỡng mềm: 4.000 token.
-- Tỉ lệ proximity: 0.85.
+- Context window: 200,000 tokens.
+- Reserve floor: 8,000 tokens.
+- Soft threshold: 4,000 tokens.
+- Proximity ratio: 0.85.
 
-Ngưỡng hiệu dụng:
+Effective threshold:
 
 ```text
 contextWindowTokens - reserveTokensFloor - softThresholdTokens
 ```
 
-Trước nén chạy khi:
+Precompact runs when:
 
 ```text
 estimatedTokens >= proximityRatio * threshold
 ```
 
-Tỉ lệ proximity có thể ghi đè bằng:
+The proximity ratio can be overridden with:
 
 ```bash
 CLAWMEM_PRECOMPACT_PROXIMITY_RATIO=0.85
 ```
 
-Giá trị bị kẹp trong khoảng an toàn `[0.5, 0.95]`.
+Values are clamped to the safe range `[0.5, 0.95]`.
 
-## Biến môi trường
+## Environment variables
 
-Plugin có thể truyền các biến này tới tiến trình con ClawMem:
+The plugin can pass these variables to ClawMem subprocesses:
 
-| Biến | Nguồn cấu hình | Mục đích |
+| Variable | Source config | Purpose |
 | --- | --- | --- |
-| `CLAWMEM_PROFILE` | `profile` | Hồ sơ truy xuất và trích xuất |
-| `CLAWMEM_EMBED_URL` | `gpuEmbed` | Điểm cuối embedding |
-| `CLAWMEM_LLM_URL` | `gpuLlm` | Điểm cuối LLM |
-| `CLAWMEM_LLM_MODEL` | `gpuLlmModel` | Tên model LLM |
-| `CLAWMEM_LLM_REASONING_EFFORT` | `gpuLlmReasoningEffort` | Tham số nỗ lực suy luận |
-| `CLAWMEM_LLM_NO_THINK` | `gpuLlmNoThink` | Hành vi `/no_think` |
-| `CLAWMEM_RERANK_URL` | `gpuRerank` | Điểm cuối xếp hạng lại |
-| `CLAWMEM_API_TOKEN` | Biến môi trường tiến trình | Token Bearer cho gọi REST API |
-| `CLAWMEM_PRECOMPACT_PROXIMITY_RATIO` | Biến môi trường tiến trình | Tỉ lệ proximity trước nén |
-| `OPENCLAW_STATE_DIR` | Biến môi trường tiến trình | Thư mục trạng thái OpenClaw rõ ràng |
-| `OPENCLAW_HOME` | Biến môi trường tiến trình | Ghi đè thư mục home OpenClaw |
-| `OPENCLAW_TEST_FAST` | Biến môi trường tiến trình | Lối tắt thư mục trạng thái chế độ kiểm tra |
+| `CLAWMEM_PROFILE` | `profile` | Retrieval/extraction profile |
+| `CLAWMEM_EMBED_URL` | `gpuEmbed` | Embedding endpoint |
+| `CLAWMEM_LLM_URL` | `gpuLlm` | LLM endpoint |
+| `CLAWMEM_LLM_MODEL` | `gpuLlmModel` | LLM model name |
+| `CLAWMEM_LLM_REASONING_EFFORT` | `gpuLlmReasoningEffort` | Reasoning effort parameter |
+| `CLAWMEM_LLM_NO_THINK` | `gpuLlmNoThink` | `/no_think` behavior |
+| `CLAWMEM_RERANK_URL` | `gpuRerank` | Reranker endpoint |
+| `CLAWMEM_API_TOKEN` | process environment | Bearer token for REST API calls |
+| `CLAWMEM_PRECOMPACT_PROXIMITY_RATIO` | process environment | Precompact proximity ratio |
+| `OPENCLAW_STATE_DIR` | process environment | Explicit OpenClaw state directory |
+| `OPENCLAW_HOME` | process environment | OpenClaw home override |
+| `OPENCLAW_TEST_FAST` | process environment | Test-mode state-dir shortcut |
 
-## Xử lý lỗi
+## Failure handling
 
-Plugin ưu tiên khả dụng hơn thất bại nghiêm ngặt:
+The plugin favors availability over strict failure:
 
-- Lỗi tiến trình con móc trả về ngữ cảnh rỗng thay vì ném lỗi.
-- Lỗi hết thời gian móc được ghi nhật ký và mở rộng khi lỗi.
-- File bản ghi thiếu bỏ qua các đường trích xuất cần bản ghi.
-- Lỗi REST API trả về thông báo lỗi hiển thị cho công cụ thay vì làm crash agent.
-- Tệp thực thi `clawmem` thiếu được xem là vấn đề triển khai hoặc cấu hình.
+- Hook subprocess errors return empty context instead of throwing.
+- Hook timeout errors are logged and fail open.
+- Missing transcript files skip extraction paths that require transcripts.
+- REST API failures return tool-visible error messages instead of crashing the agent.
+- Missing `clawmem` binary should be treated as a deployment/configuration issue.
 
-## Kiểm định cục bộ
+## Local validation
 
-Kiểm tra repository cơ bản:
+Basic repository checks:
 
 ```bash
 git status --short --branch
@@ -458,63 +458,63 @@ git diff --check
 node --check index.ts
 ```
 
-Lưu ý: `node --check` không kiểm định cú pháp TypeScript trong mọi môi trường. Dùng quy trình kiểm định dự án OpenClaw hoặc trình biên dịch TypeScript khi có.
+Note: `node --check` does not type-check TypeScript syntax in all environments. Use the OpenClaw project validation flow or a TypeScript compiler when available.
 
-Nếu `clawmem` đã cài đặt, xác minh tệp thực thi và dịch vụ thủ công:
+If `clawmem` is installed, verify the binary and service manually:
 
 ```bash
 clawmem --help
 clawmem serve --port 7438
 ```
 
-Sau đó kiểm tra REST API theo tài liệu runtime ClawMem.
+Then check the REST API according to the ClawMem runtime documentation.
 
-## Xử lý sự cố
+## Troubleshooting
 
-### Công cụ agent báo rằng API ClawMem không thể truy cập
+### Agent tools report that ClawMem API is unreachable
 
-Kiểm tra:
+Check:
 
-1. `servePort` khớp với cổng `clawmem serve` đang chạy.
-2. Dịch vụ plugin đã khởi động thành công.
-3. Không có tiến trình nào khác chiếm cổng.
-4. `CLAWMEM_API_TOKEN` khớp với cấu hình máy chủ khi xác thực được bật.
+1. `servePort` matches the running `clawmem serve` port.
+2. The plugin service started successfully.
+3. No other process is occupying the port.
+4. `CLAWMEM_API_TOKEN` matches server configuration when auth is enabled.
 
-### Móc trả về không có ngữ cảnh bổ sung
+### Hooks return no additional context
 
-Kiểm tra:
+Check:
 
-1. `clawmemBin` trỏ tới tệp thực thi có thể thực thi.
-2. Tên móc tồn tại trong runtime ClawMem.
-3. Đường dẫn bản ghi OpenClaw tồn tại.
-4. `OPENCLAW_STATE_DIR` hoặc `OPENCLAW_HOME` được đặt đúng khi dùng thư mục trạng thái tùy chỉnh.
-5. ClawMem đã lập chỉ mục các bộ sưu tập bộ nhớ liên quan.
+1. `clawmemBin` points to an executable binary.
+2. Hook names exist in the ClawMem runtime.
+3. The OpenClaw transcript path exists.
+4. `OPENCLAW_STATE_DIR` or `OPENCLAW_HOME` is set correctly when using a custom state directory.
+5. ClawMem has indexed the relevant memory collections.
 
-### Trích xuất trước nén không chạy
+### Precompact extraction does not run
 
-Kiểm tra:
+Check:
 
-1. Phiên hiện tại có đủ token ước lượng để vượt qua cổng proximity.
-2. `CLAWMEM_PRECOMPACT_PROXIMITY_RATIO` không được đặt quá cao.
-3. Đường dẫn bản ghi hợp lệ có thể phân giải cho phiên.
-4. Việc triển khai không dựa vào các khóa cấu hình plugin không có tài liệu cho ngưỡng nén.
+1. The current session has enough estimated tokens to cross the proximity gate.
+2. `CLAWMEM_PRECOMPACT_PROXIMITY_RATIO` is not set too high.
+3. A valid transcript path can be resolved for the session.
+4. The deployment is not relying on undocumented plugin config keys for compaction thresholds.
 
-Lưu ý bản kê hiện tại: `openclaw.plugin.json` có `additionalProperties: false` và không phơi bày `compactionContextWindow`, `precompactProximityRatio`, `softThresholdTokens`, hoặc `reserveTokensFloor` như các trường cấu hình plugin được chấp nhận. Ghi đè runtime duy nhất có tài liệu trong README này là biến môi trường `CLAWMEM_PRECOMPACT_PROXIMITY_RATIO`. Các mặc định ngưỡng khác hiện là mặc định cấp code trừ khi lược đồ bản kê được mở rộng trong thay đổi tương lai.
+Current manifest note: `openclaw.plugin.json` has `additionalProperties: false` and does not expose `compactionContextWindow`, `precompactProximityRatio`, `softThresholdTokens`, or `reserveTokensFloor` as accepted plugin config fields. The only documented runtime override in this README is the environment variable `CLAWMEM_PRECOMPACT_PROXIMITY_RATIO`. Other threshold defaults are currently code-level defaults unless the manifest/schema is expanded in a future change.
 
-### Plugin hoạt động trong Bun nhưng lỗi trong Node ESM
+### Plugin works in Bun but fails in Node ESM
 
-Plugin này dùng `import.meta.url` để suy ra `__dirname` trong ESM. Tránh phụ thuộc vào các biến toàn cục chỉ có trong Bun khi thêm code mới.
+This plugin uses `import.meta.url` to derive `__dirname` in ESM. Avoid relying on Bun-only globals when adding new code.
 
-## Ghi chú phát triển
+## Development notes
 
-- Giữ repository này tập trung vào lớp adapter OpenClaw.
-- Không đưa code runtime ClawMem vào repository plugin này trừ khi phạm vi dự án thay đổi rõ ràng.
-- Giữ hành vi plugin mở rộng khi lỗi để lỗi bộ nhớ không làm gãy phiên agent thông thường.
-- Khi thêm công cụ mới, ghi tài liệu tên công cụ, tham số, điểm cuối REST, và hành vi lỗi trong README này.
-- Khi thêm móc vòng đời mới, ghi tài liệu liệu nó được chờ hay không chờ và liệu nó có quan trọng cho tính chính xác hay không.
+- Keep this repository focused on the OpenClaw adapter layer.
+- Do not vendor ClawMem runtime code into this plugin repository unless the project scope changes explicitly.
+- Keep plugin behavior fail-open so memory failures do not break normal agent turns.
+- When adding a new tool, document the tool name, parameters, REST endpoint, and failure behavior in this README.
+- When adding a new lifecycle hook, document whether it is awaited or fire-and-forget and whether it is correctness-critical.
 
-## Ghi chú phát hành
+## Release notes
 
-Siêu dữ liệu gói phiên bản hiện tại: `0.0.1`.
+Current package metadata version: `0.0.1`.
 
-README này ghi tài liệu kiến trúc plugin và hành vi vận hành cho nhánh tài liệu dự án công khai ban đầu.
+This README documents the plugin architecture and operational behavior for the initial public project documentation branch.
