@@ -1,6 +1,6 @@
 # TOOLS.md - Ghi chú công cụ của repository
 
-Tài liệu này ghi lại công cụ, command, và validation dành cho AI agent làm việc trong repository này.
+Tài liệu này ghi lại công cụ, lệnh, và kiểm định dành cho AI agent làm việc trong repository này.
 
 ## Công cụ đã thấy trong môi trường hiện tại
 
@@ -16,10 +16,10 @@ Không mặc định có ở mọi môi trường:
 
 - `bun`
 - `clawmem`
-- TypeScript compiler config
-- OpenClaw plugin validator
+- Trình biên dịch TypeScript
+- Trình kiểm định plugin OpenClaw
 
-Luôn kiểm tra trước khi phụ thuộc vào tool:
+Luôn kiểm tra trước khi phụ thuộc vào công cụ:
 
 ```bash
 command -v gh || true
@@ -29,64 +29,64 @@ command -v bun || true
 command -v clawmem || true
 ```
 
-## GitHub workflow
+## Quy trình GitHub
 
-Nếu `gh` đã auth, dùng:
+Nếu `gh` đã xác thực, dùng:
 
 ```bash
 gh auth status
 gh pr view --json number,state,url,headRefName,baseRefName,mergeable,mergeStateStatus,statusCheckRollup
 ```
 
-Nếu `gh pr edit` lỗi do GitHub Projects GraphQL, dùng REST qua `gh api` để patch PR metadata.
+Nếu `gh pr edit` lỗi do GitHub Projects GraphQL, dùng REST qua `gh api` để vá siêu dữ liệu PR.
 
-## Validation tài liệu
+## Kiểm định tài liệu
 
-Với thay đổi docs-only:
+Với thay đổi chỉ tài liệu:
 
 ```bash
 git diff --check
 git status --short --branch
 ```
 
-Review Markdown để đảm bảo:
+Duyệt Markdown để đảm bảo:
 
-- Không có secret.
-- Không có placeholder giả làm config thật.
+- Không có bí mật.
+- Không có chỗ giữ chỗ giả làm cấu hình thật.
 - Không mâu thuẫn giữa `AGENTS.md`, `SOUL.md`, `IDENTITY.md`, `USER.md`, `TOOLS.md`, `HEARTBEAT.md`.
-- Không yêu cầu commit `.openclaw/` hoặc local state.
+- Không yêu cầu commit `.openclaw/` hoặc trạng thái cục bộ.
 
-## Validation TypeScript/plugin
+## Kiểm định TypeScript và plugin
 
-Repo hiện có TypeScript source nhưng chưa có đầy đủ project config ở mọi nhánh.
+Repo hiện có mã nguồn TypeScript nhưng chưa có đầy đủ cấu hình dự án ở mọi nhánh.
 
-Khi sửa code TypeScript, dùng validation mạnh nhất có sẵn:
+Khi sửa code TypeScript, dùng kiểm định mạnh nhất có sẵn:
 
 ```bash
 npx tsc --noEmit
 ```
 
-Nếu chưa có TypeScript setup, báo rõ type-check chưa chạy được và chạy validator khác nếu OpenClaw cung cấp.
+Nếu chưa có thiết lập TypeScript, báo rõ kiểm định kiểu chưa chạy được và chạy trình kiểm định khác nếu OpenClaw cung cấp.
 
 ## Kiểm tra runtime ClawMem
 
-Plugin phụ thuộc binary `clawmem` bên ngoài. Khi binary có sẵn, kiểm tra cơ bản:
+Plugin phụ thuộc tệp thực thi `clawmem` bên ngoài. Khi tệp thực thi có sẵn, kiểm tra cơ bản:
 
 ```bash
 clawmem --help
 clawmem serve --port 7438
 ```
 
-Nếu thiếu `clawmem`, không coi đó là blocker cho PR tài liệu. Báo là giới hạn môi trường.
+Nếu thiếu `clawmem`, không coi đó là vật chặn cho PR tài liệu. Báo là giới hạn môi trường.
 
-## Chính sách file local
+## Chính sách file cục bộ
 
-`.openclaw/` là local runtime state và phải được ignore.
+`.openclaw/` là trạng thái runtime cục bộ và phải được bỏ qua.
 
 Không commit:
 
-- Token/API key.
-- Local session state.
-- Memory cá nhân.
-- Dependency folder sinh ra.
-- Runtime logs.
+- Token hoặc khóa API.
+- Trạng thái phiên cục bộ.
+- Bộ nhớ cá nhân.
+- Thư mục phụ thuộc sinh ra.
+- Nhật ký runtime.

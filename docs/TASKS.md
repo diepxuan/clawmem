@@ -1,45 +1,45 @@
-# TASKS.md - ClawMem OpenClaw Plugin Backlog
+# TASKS.md - Tồn đọng kỹ thuật ClawMem OpenClaw Plugin
 
-Tracked backlog for maintainers and AI agents. Keep this file factual and update it when tasks are completed.
+Danh sách tồn đọng kỹ thuật được theo dõi cho người bảo trì và AI agent. Giữ file này trung lập với thực tế và cập nhật khi tác vụ hoàn thành.
 
-Last updated: 2026-06-01
+Cập nhật lần cuối: 2026-06-01
 
-## Critical
+## Quan trọng
 
-| ID | Task | Details | Files |
+| ID | Tác vụ | Chi tiết | File |
 | --- | --- | --- | --- |
-| T1 | Add TypeScript project validation | The repo has TypeScript files but no committed `tsconfig.json` or validation script. Add a minimal type-check path. | `tsconfig.json`, `package.json` |
-| T2 | Define test runner | Test seams exist in code, but no tests are committed. Add initial unit tests for pure logic and hook seams. | `*.test.ts`, `package.json` |
+| T1 | Thêm kiểm định dự án TypeScript | Repo có file TypeScript nhưng chưa có `tsconfig.json` hoặc kịch bản kiểm định được commit. Thêm đường kiểm định kiểu tối thiểu. | `tsconfig.json`, `package.json` |
+| T2 | Định nghĩa trình chạy kiểm thử | Các đường kiểm thử tồn tại trong code nhưng chưa có kiểm thử nào được commit. Thêm kiểm thử đơn vị ban đầu cho logic thuần và các đường móc. | `*.test.ts`, `package.json` |
 
-## Important
+## Cần thiết
 
-| ID | Task | Details | Files |
+| ID | Tác vụ | Chi tiết | File |
 | --- | --- | --- | --- |
-| T3 | Keep README current | README should stay aligned with config schema, tools, hooks, and service behavior. | `README.md`, `openclaw.plugin.json`, `tools.ts`, `engine.ts` |
-| T4 | Document ClawMem hook contracts | List required `clawmem hook <name>` commands and expected input/output shape. | `README.md` or `docs/HOOKS.md` |
-| T5 | Add CI | Add GitHub Actions for diff hygiene, type-check, and tests when tooling exists. | `.github/workflows/` |
-| T6 | Add changelog | Track plugin changes, compatibility notes, and breaking changes. | `CHANGELOG.md` |
-| T7 | Define OpenClaw compatibility range | Code comments reference OpenClaw internal paths. Document target version/commit compatibility. | `README.md`, `docs/COMPATIBILITY.md` |
+| T3 | Giữ README cập nhật | README phải luôn đồng bộ với lược đồ cấu hình, công cụ, móc, và hành vi dịch vụ. | `README.md`, `openclaw.plugin.json`, `tools.ts`, `engine.ts` |
+| T4 | Tài liệu hợp đồng móc ClawMem | Liệt kê các lệnh `clawmem hook <tên>` cần thiết và hình dạng đầu vào/đầu ra mong đợi. | `README.md` hoặc `docs/HOOKS.md` |
+| T5 | Thêm CI | Thêm GitHub Actions cho kiểm tra khác biệt, kiểm định kiểu, và kiểm thử khi công cụ tồn tại. | `.github/workflows/` |
+| T6 | Thêm nhật ký thay đổi | Theo dõi các thay đổi plugin, ghi chú tương thích, và thay đổi phá vỡ. | `CHANGELOG.md` |
+| T7 | Định nghĩa phạm vi tương thích OpenClaw | Các chú thích code tham chiếu đường nội bộ OpenClaw. Tài liệu hóa phạm vi phiên bản hoặc commit tương thích. | `README.md`, `docs/COMPATIBILITY.md` |
 
-## Nice to have
+## Nên có
 
-| ID | Task | Details | Files |
+| ID | Tác vụ | Chi tiết | File |
 | --- | --- | --- | --- |
-| T8 | Improve token estimation | `estimateTokensFromMessages` uses a chars/4 heuristic. Consider model-aware estimation if needed. | `compaction-threshold.ts` |
-| T9 | Add integration tests | Use a mock `clawmem serve` and verify tool calls plus lifecycle hook flows. | test suite |
-| T10 | Add service readiness handling | Check whether `clawmem serve` exposes or should expose a health endpoint before tools depend on it. | `shell.ts`, upstream ClawMem runtime |
+| T8 | Cải thiện ước lượng token | `estimateTokensFromMessages` dùng heuristic ký tự/4. Cân nhắc ước lượng model-aware nếu cần. | `compaction-threshold.ts` |
+| T9 | Thêm kiểm thử tích hợp | Dùng `clawmem serve` giả và xác minh gọi công cụ cùng quy trình móc vòng đời. | Bộ kiểm thử |
+| T10 | Thêm xử lý sẵn sàng dịch vụ | Kiểm tra liệu `clawmem serve` có phơi bày hoặc nên phơi bày điểm cuối kiểm tra sức khỏe trước khi công cụ phụ thuộc. | `shell.ts`, runtime ClawMem upstream |
 
-## Open questions
+## Câu hỏi mở
 
-| ID | Question | Context |
+| ID | Câu hỏi | Ngữ cảnh |
 | --- | --- | --- |
-| Q1 | Should this package ship TypeScript only or compiled JavaScript? | Current entry is `index.ts`; no build output is committed. |
-| Q2 | Where is the canonical ClawMem runtime repository? | This plugin depends on the external `clawmem` binary. |
-| Q3 | Which OpenClaw versions are supported? | Hook behavior and state layout rely on OpenClaw internals. |
+| Q1 | Gói này nên chỉ phát hành TypeScript hay cả JavaScript biên dịch? | Điểm vào hiện tại là `index.ts`; không có kết quả xây dựng được commit. |
+| Q2 | Repository chính thức của runtime ClawMem ở đâu? | Plugin này phụ thuộc tệp thực thi `clawmem` bên ngoài. |
+| Q3 | Phiên bản OpenClaw nào được hỗ trợ? | Hành vi móc và bố cục trạng thái phụ thuộc nội bộ OpenClaw. |
 
-## Maintenance rules
+## Quy tắc bảo trì
 
-- Do not add local machine state to this backlog.
-- Do not mark an item complete unless the change is committed or deliberately closed.
-- Keep each task scoped enough for one branch and one PR.
-- Move completed work to release notes or changelog when a changelog exists.
+- Không thêm trạng thái máy cục bộ vào danh sách tồn đọng này.
+- Không đánh dấu tác vụ hoàn thành trừ khi thay đổi đã được commit hoặc đóng có chủ đích.
+- Giữ mỗi tác vụ đủ phạm vi cho một nhánh và một PR.
+- Chuyển công việc hoàn thành sang ghi chú phát hành hoặc nhật ký thay đổi khi nhật ký thay đổi tồn tại.
