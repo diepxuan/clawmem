@@ -120,6 +120,28 @@ describe("ClawMemMemorySearchManager.search", () => {
     expect(results[0].source).toBe("sessions");
     expect(results[0].path).toContain("sessions/");
   });
+
+  it("passes explicit ClawMem search mode through to the API", async () => {
+    mockFetch(200, { count: 0, results: [] });
+
+    await manager.search("test", { mode: "hybrid" });
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      "http://127.0.0.1:7438/search",
+      expect.objectContaining({ body: expect.stringContaining('"mode":"hybrid"') }),
+    );
+  });
+
+  it("maps OpenClaw qmd vsearch override to semantic mode", async () => {
+    mockFetch(200, { count: 0, results: [] });
+
+    await manager.search("test", { qmdSearchModeOverride: "vsearch" });
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      "http://127.0.0.1:7438/search",
+      expect.objectContaining({ body: expect.stringContaining('"mode":"semantic"') }),
+    );
+  });
 });
 
 // =============================================================================
@@ -229,6 +251,25 @@ describe("ClawMemMemorySearchManager.probeEmbeddingAvailability", () => {
     const cached = manager.getCachedEmbeddingAvailability();
     expect(cached).not.toBeNull();
     expect(cached!.ok).toBe(true);
+    expect(cached!.cacheExpiresAtMs).toBeGreaterThan(cached!.checkedAtMs!);
+  });
+
+  it("rechecks API readiness after cache TTL expires", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({}),
+    } as any);
+
+    await manager.probeEmbeddingAvailability();
+    await manager.probeEmbeddingAvailability();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(60_001);
+    await manager.probeEmbeddingAvailability();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
   });
 });
 
