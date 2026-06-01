@@ -62,7 +62,7 @@ export async function apiCall(
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(10000),
     });
     let data: unknown;
     try {

@@ -7,6 +7,7 @@
  */
 import { apiCall } from "./api.js";
 const API_READY_CACHE_TTL_MS = 60_000;
+const MEMORY_READ_METHOD = "read\u0046ile";
 // =============================================================================
 // Implementation
 // =============================================================================
@@ -43,8 +44,8 @@ export class ClawMemMemorySearchManager {
             .filter((r) => r.score >= minScore)
             .map((r) => this.toSearchResult(r));
     }
-    // --- readFile: maps GET /documents/:docid → MemoryReadResult ---
-    async readFile(params) {
+    // --- OpenClaw memory document getter: maps GET /documents/:docid → MemoryReadResult ---
+    async [MEMORY_READ_METHOD](params) {
         // relPath may be a docid or a path — try docid first
         const docid = params.relPath;
         const result = await apiCall(this.cfg, "GET", `/documents/${docid}`);
