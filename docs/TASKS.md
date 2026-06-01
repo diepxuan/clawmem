@@ -26,6 +26,18 @@ Last updated: 2026-06-01
 | T8 | Auto-recall/auto-capture integration | Implement actual auto-recall before turns and auto-capture after responses (requires ClawMem API support). | `index.ts`, upstream API |
 | T9 | OpenClaw SDK metadata/runtime validation | Use the real OpenClaw 2026.5.28 SDK: `defineToolPlugin` from `openclaw/plugin-sdk/tool-plugin`, `Type` from `typebox`, and `registerMemoryCapability`/`registerMemoryCorpusSupplement` via the plugin runtime API. Keep the plugin API-only, generate manifest metadata with `openclaw plugins build`, then validate with `npm run typecheck`, `npm test -- --run`, and `openclaw plugins build` until all pass. If runtime validation fails, document root cause and next fix here before continuing. | `index.ts`, `openclaw.plugin.json`, `package.json`, `package-lock.json` |
 
+## Memory provider review fixes
+
+| ID | Risk | Priority | Status | Details | Files |
+| --- | --- | --- | --- | --- | --- |
+| R1 | `_apiReady` cached forever | P1 | Follow-up PR | Add TTL (60s) — re-HEAD after expiry instead of caching forever | `manager.ts` |
+| R2 | `search()` hardcodes `mode: "auto"` | P2 | Follow-up PR | Add explicit `opts.mode` and map OpenClaw qmd search overrides to ClawMem keyword/semantic/hybrid modes | `manager.ts` |
+| R3 | `resolveMemoryBackendConfig` returns `"builtin"` — semantic needs verification | P1 | Research | OpenClaw 2026.5.28 type shim currently allows only `builtin`/`qmd`; do not change to `clawmem` without runtime/type confirmation | `index.ts`, SDK docs |
+| R6 | `registerMemoryCorpusSupplement` may be absent in some SDK runtimes | P1 | PR #19 | Add graceful fallback when method is unavailable | `index.ts` |
+| R7 | Corpus supplement `get(p)` — `p.lookup` shape unknown | P1 | Research | Test with real OpenClaw runtime to verify param format before changing behavior | `index.ts` |
+| R13 | `apiCall` — `resp.json()` throws on non-JSON responses | P1 | Follow-up PR | Wrap JSON parse in separate try/catch, fallback to empty object | `api.ts` |
+| R15 | `typebox ^1.1.39` may conflict with OpenClaw bundled version | P2 | PR #19 | Pin `typebox` to OpenClaw 2026.5.28's bundled `1.1.38` | `package.json` |
+
 ## Open questions
 
 | ID | Question | Context |

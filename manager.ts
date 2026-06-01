@@ -60,6 +60,10 @@ type MemorySyncProgressUpdate = {
   label?: string;
 };
 
+type ClawMemSearchMode = "auto" | "keyword" | "semantic" | "hybrid";
+
+const API_READY_CACHE_TTL_MS = 60_000;
+
 export interface ClawMemSearchManager {
   search(
     query: string,
@@ -67,6 +71,8 @@ export interface ClawMemSearchManager {
       maxResults?: number;
       minScore?: number;
       sessionKey?: string;
+      mode?: ClawMemSearchMode;
+      qmdSearchModeOverride?: "query" | "search" | "vsearch";
       sources?: MemorySource[];
     },
   ): Promise<MemorySearchResult[]>;
@@ -95,6 +101,7 @@ export class ClawMemMemorySearchManager implements ClawMemSearchManager {
   private cfg: ClawMemConfig;
   private logger: Logger;
   private _apiReady: boolean | null = null;
+  private _apiReadyCheckedAtMs = 0;
 
   constructor(cfg: ClawMemConfig, logger: Logger) {
     this.cfg = cfg;
@@ -108,6 +115,8 @@ export class ClawMemMemorySearchManager implements ClawMemSearchManager {
       maxResults?: number;
       minScore?: number;
       sessionKey?: string;
+      mode?: ClawMemSearchMode;
+      qmdSearchModeOverride?: "query" | "search" | "vsearch";
       sources?: MemorySource[];
     },
   ): Promise<MemorySearchResult[]> {
@@ -120,7 +129,7 @@ export class ClawMemMemorySearchManager implements ClawMemSearchManager {
     const limit = opts?.maxResults ?? 10;
     const result = await apiCall(this.cfg, "POST", "/search", {
       query,
-      mode: "auto",
+      mode: this.resolveSearchMode(opts),
       limit,
       compact: false,
     });
@@ -216,8 +225,14 @@ export class ClawMemMemorySearchManager implements ClawMemSearchManager {
 
   // --- probeEmbeddingAvailability: check if ClawMem API is reachable ---
   async probeEmbeddingAvailability(): Promise<MemoryEmbeddingProbeResult> {
-    if (this._apiReady !== null) {
-      return { ok: this._apiReady, cached: true };
+    const now = Date.now();
+    if (this._apiReady !== null && now - this._apiReadyCheckedAtMs < API_READY_CACHE_TTL_MS) {
+      return {
+        ok: this._apiReady,
+        cached: true,
+        checkedAtMs: this._apiReadyCheckedAtMs,
+        cacheExpiresAtMs: this._apiReadyCheckedAtMs + API_READY_CACHE_TTL_MS,
+      };
     }
 
     try {
@@ -226,16 +241,34 @@ export class ClawMemMemorySearchManager implements ClawMemSearchManager {
         signal: AbortSignal.timeout(2000),
       });
       this._apiReady = resp.status < 500;
-      return { ok: this._apiReady, checked: true };
+      this._apiReadyCheckedAtMs = Date.now();
+      return {
+        ok: this._apiReady,
+        checked: true,
+        checkedAtMs: this._apiReadyCheckedAtMs,
+        cacheExpiresAtMs: this._apiReadyCheckedAtMs + API_READY_CACHE_TTL_MS,
+      };
     } catch {
       this._apiReady = false;
-      return { ok: false, error: "ClawMem API unreachable", checked: true };
+      this._apiReadyCheckedAtMs = Date.now();
+      return {
+        ok: false,
+        error: "ClawMem API unreachable",
+        checked: true,
+        checkedAtMs: this._apiReadyCheckedAtMs,
+        cacheExpiresAtMs: this._apiReadyCheckedAtMs + API_READY_CACHE_TTL_MS,
+      };
     }
   }
 
   getCachedEmbeddingAvailability(): MemoryEmbeddingProbeResult | null {
     if (this._apiReady === null) return null;
-    return { ok: this._apiReady, cached: true };
+    return {
+      ok: this._apiReady,
+      cached: true,
+      checkedAtMs: this._apiReadyCheckedAtMs,
+      cacheExpiresAtMs: this._apiReadyCheckedAtMs + API_READY_CACHE_TTL_MS,
+    };
   }
 
   // --- probeVectorAvailability: ClawMem REST handles vectors internally ---
@@ -259,6 +292,23 @@ export class ClawMemMemorySearchManager implements ClawMemSearchManager {
       snippet,
       source: "memory" as const,
     };
+  }
+
+  private resolveSearchMode(opts?: {
+    mode?: ClawMemSearchMode;
+    qmdSearchModeOverride?: "query" | "search" | "vsearch";
+  }): ClawMemSearchMode {
+    if (opts?.mode) return opts.mode;
+    switch (opts?.qmdSearchModeOverride) {
+      case "query":
+        return "keyword";
+      case "vsearch":
+        return "semantic";
+      case "search":
+        return "hybrid";
+      default:
+        return "auto";
+    }
   }
 
   private async searchSessions(
