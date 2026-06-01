@@ -107,6 +107,27 @@
       },
       "gpuRerank": {
         "type": "string"
+      },
+      "compactionContextWindow": {
+        "type": "number",
+        "minimum": 1000,
+        "description": "Override the conservative 200K default context window tokens"
+      },
+      "precompactProximityRatio": {
+        "type": "number",
+        "minimum": 0.5,
+        "maximum": 0.95,
+        "description": "Override the proximity ratio for precompact gate (clamped to [0.5, 0.95])"
+      },
+      "softThresholdTokens": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Soft threshold tokens (matches MemoryFlushPlan.softThresholdTokens)"
+      },
+      "reserveTokensFloor": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Reserve floor tokens (matches MemoryFlushPlan.reserveTokensFloor)"
       }
     }
   }

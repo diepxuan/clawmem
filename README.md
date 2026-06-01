@@ -179,6 +179,39 @@ Type: string
 
 Reranker endpoint URL. Passed as `CLAWMEM_RERANK_URL`.
 
+### `compactionContextWindow`
+
+Type: number
+Default: 200000
+Minimum: 1000
+
+Override the conservative 200K default context window tokens. The plugin uses this as the base value for computing the compaction threshold.
+
+### `precompactProximityRatio`
+
+Type: number
+Default: 0.85
+Minimum: 0.5
+Maximum: 0.95
+
+Override the proximity ratio for the precompact gate. Values are clamped to `[0.5, 0.95]` to prevent misconfiguration from disabling precompact entirely or firing on every turn. Can also be set via the environment variable `CLAWMEM_PRECOMPACT_PROXIMITY_RATIO`.
+
+### `softThresholdTokens`
+
+Type: number
+Default: 4000
+Minimum: 0
+
+Soft threshold tokens, matching `MemoryFlushPlan.softThresholdTokens` in OpenClaw. Subtracted from the context window along with the reserve floor.
+
+### `reserveTokensFloor`
+
+Type: number
+Default: 8000
+Minimum: 0
+
+Reserve floor tokens, matching `MemoryFlushPlan.reserveTokensFloor` in OpenClaw. Subtracted from the context window along with the soft threshold.
+
 ## Example configuration
 
 Minimal configuration:

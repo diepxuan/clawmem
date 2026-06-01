@@ -89,7 +89,7 @@ const clawmemPlugin = {
   name: "ClawMem",
   description:
     "On-device hybrid memory layer for OpenClaw — composite scoring, graph traversal, lifecycle management, and pre-emptive compaction state extraction",
-  version: "0.10.1",
+  version: "0.10.2",
   kind: "memory" as const,
 
   register(api: any) {
