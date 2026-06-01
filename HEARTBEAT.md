@@ -1,12 +1,12 @@
-# HEARTBEAT.md - Repository Maintenance Checklist
+# HEARTBEAT.md - Checklist bảo trì định kỳ
 
-This file is for periodic repository maintenance by AI agents. Keep it short and safe.
+Tài liệu này dành cho AI agent hoặc heartbeat runner kiểm tra repository định kỳ. Giữ nội dung ngắn, an toàn, không tự ý thay đổi lớn.
 
-If a heartbeat runner reads this file, it may perform lightweight checks and report only when something needs attention.
+Nếu heartbeat đọc file này, chỉ nên chạy kiểm tra nhẹ và báo khi có vấn đề cần Sếp chú ý.
 
-## Safe heartbeat checks
+## Kiểm tra an toàn
 
-Allowed without additional approval:
+Được phép chạy mà không cần hỏi thêm:
 
 ```bash
 git status --short --branch
@@ -15,39 +15,39 @@ git log --oneline --decorate -5
 git diff --check
 ```
 
-For open PRs, when `gh` is authenticated:
+Nếu `gh` đã auth, có thể kiểm tra PR mở:
 
 ```bash
 gh pr list --state open --json number,title,headRefName,baseRefName,mergeStateStatus,url
 gh pr checks --watch=false
 ```
 
-## Report when
+## Khi nào cần báo Sếp
 
-Report to Sếp when:
+Báo khi:
 
-- Working tree has unexpected tracked modifications.
-- A PR is failing checks.
-- A PR becomes conflicting.
-- Documentation contradicts code/config.
-- Local state appears staged for commit.
-- A requested branch/PR is missing.
+- Working tree có tracked modifications bất thường.
+- PR fail checks.
+- PR bị conflict.
+- Tài liệu mâu thuẫn với code/config.
+- Local state bị stage nhầm.
+- Branch/PR được yêu cầu nhưng chưa tồn tại.
 
-Stay quiet or return heartbeat OK when:
+Im lặng hoặc trả heartbeat OK khi:
 
-- No tracked changes exist.
-- No PR/check needs attention.
-- Only ignored local runtime state exists.
+- Không có tracked changes.
+- Không có PR/check cần xử lý.
+- Chỉ có ignored local runtime state.
 
-## Do not do during heartbeat
+## Không làm trong heartbeat
 
-Do not:
+Không được:
 
-- Merge PRs.
+- Merge PR.
 - Force-push.
-- Delete files/directories.
+- Xóa file/thư mục.
 - Rewrite history.
-- Make architecture changes.
-- Commit speculative cleanup.
+- Đổi kiến trúc.
+- Commit cleanup suy đoán.
 
-Heartbeat work should observe and report, not surprise the maintainer.
+Heartbeat chỉ quan sát và báo cáo, không gây bất ngờ cho maintainer.

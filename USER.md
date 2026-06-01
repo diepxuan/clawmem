@@ -1,51 +1,51 @@
-# USER.md - Maintainer Expectations
+# USER.md - Kỳ vọng của Sếp trong dự án
 
-This file records stable expectations for agents working with Sếp in this repository.
+Tài liệu này ghi lại kỳ vọng ổn định dành cho AI agent làm việc với Sếp trong repository này.
 
-## Primary user
+## Người dùng chính
 
-Name: Duc Tran
-Call them: Sếp
+Tên: Duc Tran
+Cách gọi: Sếp
 Timezone: Asia/Saigon
-Working language for reports: Vietnamese
-Preferred style: concise, technical, direct, no filler.
+Ngôn ngữ báo cáo: tiếng Việt có dấu
+Phong cách mong muốn: ngắn gọn, kỹ thuật, trực tiếp, không filler.
 
-## Work expectations
+## Kỳ vọng khi làm việc
 
-Sếp expects:
+Sếp yêu cầu:
 
-- Strict Git discipline.
-- Branch -> commit -> PR workflow.
-- No unapproved merge.
-- No unapproved force-push.
-- No accidental local-state or secret commits.
-- Documentation updated with code/config/workflow changes.
-- Clear validation results, including what was not run and why.
+- Tuân thủ Git nghiêm ngặt.
+- Làm theo workflow branch -> commit -> PR.
+- Không merge nếu chưa được lệnh rõ.
+- Không force-push nếu chưa được lệnh rõ.
+- Không commit local state hoặc secret.
+- Cập nhật tài liệu cùng với thay đổi code/config/workflow.
+- Báo cáo validation rõ ràng, bao gồm cả phần chưa chạy được và lý do.
 
-## Reporting format
+## Format báo cáo khi xong việc
 
-When finishing a task, report:
+Báo cáo nên có:
 
-- Branch name.
-- Commit SHA and message.
-- PR link when created/updated.
-- Files changed.
-- Validation commands run.
-- PR state/check status when available.
-- Any remaining untracked files or risks.
+- Branch.
+- Commit SHA và commit message.
+- PR link nếu có tạo/cập nhật PR.
+- File đã đổi.
+- Validation đã chạy.
+- Trạng thái PR/checks nếu có.
+- Rủi ro hoặc untracked files còn lại.
 
-## Decision boundaries
+## Ranh giới quyết định
 
-Ask Sếp before:
+Hỏi Sếp trước khi:
 
-- Expanding task scope.
-- Creating additional PRs not requested.
-- Changing release/version strategy.
-- Removing large files or directories.
-- Touching credentials, deployment config, or unrelated infrastructure.
+- Mở rộng scope task.
+- Tạo PR ngoài yêu cầu.
+- Đổi release/version strategy.
+- Xóa file/thư mục lớn.
+- Đụng credential, deployment config, hoặc hạ tầng không liên quan.
 
-Do not ask when the task is already explicit and low-risk. Execute, verify, and report.
+Không cần hỏi lại khi task đã rõ và rủi ro thấp. Thực hiện, kiểm chứng, rồi báo cáo.
 
-## Repository-specific expectation
+## Kỳ vọng riêng của repository
 
-This repository should be usable by other AI agents. Keep instructions explicit, consistent, and free of private runtime assumptions.
+Repository này phải dùng được cho AI agent khác. Vì vậy tài liệu phải rõ ràng, nhất quán, có tiếng Việt có dấu, và không phụ thuộc vào giả định local/private.

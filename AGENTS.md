@@ -1,147 +1,159 @@
-# AGENTS.md - ClawMem OpenClaw Plugin Operating Guide
+# AGENTS.md - Quy tắc vận hành cho AI agent trong dự án ClawMem
 
-This file is the primary instruction file for AI agents working in this repository.
+Tài liệu này là điểm vào chính cho mọi AI agent làm việc trong repository này.
 
-Project: ClawMem OpenClaw Plugin
-Purpose: OpenClaw memory plugin adapter for an external `clawmem` runtime.
-Owner decision authority: Duc Tran (Sếp).
+Dự án: ClawMem OpenClaw Plugin
+Mục tiêu: adapter memory plugin cho OpenClaw, kết nối tới runtime `clawmem` bên ngoài.
+Người quyết định cuối cùng: Duc Tran (Sếp).
 
-## Startup checklist
+## Checklist khi bắt đầu phiên
 
-Before changing anything:
+Trước khi sửa bất kỳ file nào:
 
-1. Read this file first.
-2. Read `SOUL.md`, `IDENTITY.md`, `USER.md`, `TOOLS.md`, and `HEARTBEAT.md` when present in the runtime context.
-3. Inspect current Git state:
+1. Đọc `AGENTS.md` trước.
+2. Đọc hoặc dùng context đã nạp từ các tài liệu nhận diện/vận hành:
+   - `SOUL.md`
+   - `IDENTITY.md`
+   - `USER.md`
+   - `TOOLS.md`
+   - `HEARTBEAT.md`
+3. Kiểm tra trạng thái Git:
 
 ```bash
 git status --short --branch
 git remote -v
 ```
 
-4. Confirm the active branch and scope before edits.
-5. For any GitHub work, follow the branch -> commit -> PR workflow. Do not merge without explicit approval.
+4. Xác nhận branch hiện tại, base branch, và phạm vi task.
+5. Nếu task liên quan GitHub, dùng workflow branch -> commit -> PR. Không merge nếu chưa có lệnh rõ từ Sếp.
 
-## Repository scope
+## Phạm vi repository
 
-This repository contains the OpenClaw plugin adapter only. It should stay focused on adapter code and project documentation.
+Repository này chỉ chứa adapter plugin cho OpenClaw. Giữ scope gọn, tránh biến repo thành nơi chứa runtime hoặc trạng thái local.
 
-In scope:
+Được làm trong repo này:
 
-- OpenClaw plugin registration.
-- Memory capability integration.
-- Lifecycle hook handlers.
-- Agent tool registration.
-- REST API client calls to local ClawMem service.
-- Transcript path resolution.
-- Documentation for installation, configuration, operation, troubleshooting, and AI-agent handoff.
+- Đăng ký OpenClaw plugin.
+- Tích hợp memory capability.
+- Xử lý lifecycle hooks.
+- Đăng ký agent tools.
+- Gọi REST API local của ClawMem.
+- Resolve transcript/session path của OpenClaw.
+- Viết tài liệu cài đặt, cấu hình, vận hành, troubleshooting, và handoff cho AI agent khác.
 
-Out of scope unless Sếp explicitly approves:
+Không làm nếu chưa được Sếp cho phép rõ:
 
-- Vendoring the full ClawMem runtime.
-- Editing unrelated OpenClaw core code.
-- Adding credentials, local state, or machine-specific secrets.
-- Changing release/tag strategy.
-- Merging PRs.
+- Vendor toàn bộ ClawMem runtime vào repo này.
+- Sửa OpenClaw core ngoài scope plugin.
+- Commit credential, secret, memory cá nhân, hoặc local runtime state.
+- Đổi chiến lược release/tag.
+- Merge PR.
+- Force-push hoặc rewrite history.
 
-## Git discipline
+## Kỷ luật Git
 
-Rules are strict:
+Quy tắc bắt buộc:
 
-- One task equals one branch and one PR unless Sếp explicitly groups related work.
-- Start from updated `main` unless Sếp tells otherwise.
-- Commit only scoped files.
-- Never commit exploratory files unless they are part of the approved task.
-- Never force-push unless Sếp explicitly approves history rewrite.
-- Never merge without Sếp approval.
-- Do not hide untracked files; report them when relevant.
+- Một task = một branch = một PR, trừ khi Sếp gom scope rõ ràng.
+- Tạo branch từ base đúng theo yêu cầu của Sếp.
+- Chỉ commit file thuộc scope.
+- Không commit file exploratory hoặc file sinh ra tạm thời.
+- Không force-push nếu Sếp chưa cho phép.
+- Không merge nếu Sếp chưa cho phép.
+- Khi có untracked files liên quan, báo rõ thay vì bỏ qua.
 
-Current version-lane convention for this repository:
+Với lane version `0.0.1`:
 
-- Version/documentation branch names may be exact version strings, for example `0.0.1`, when Sếp asks for that branch name.
-- Documentation follow-up for an existing PR should be committed to that PR branch when Sếp asks to update the same PR.
+- Nếu Sếp yêu cầu PR target `0.0.1`, tạo branch task từ `origin/0.0.1`.
+- PR follow-up phải base vào `0.0.1`, không base vào `main`, trừ khi Sếp đổi chỉ đạo.
 
-## Documentation discipline
+## Kỷ luật tài liệu
 
-Documentation is mandatory when behavior, configuration, commands, files, or agent workflow changes.
+Phải cập nhật tài liệu khi thay đổi behavior, cấu hình, command, file layout, hoặc workflow agent.
 
-Required docs for this repository:
+Nhóm tài liệu chính:
 
-- `README.md`: user-facing overview, setup, config, operation, troubleshooting.
-- `AGENTS.md`: AI-agent operating rules for this repo.
-- `SOUL.md`: shared behavior/personality contract for AI agents.
-- `IDENTITY.md`: repository-specific AI-agent identity.
-- `USER.md`: stable user/team expectations relevant to work in this repo.
-- `TOOLS.md`: repo-specific tool and validation notes.
-- `HEARTBEAT.md`: periodic/maintenance checklist.
-- `docs/TASKS.md`: backlog and known gaps.
+- `README.md`: tài liệu người dùng, cấu hình, vận hành, troubleshooting.
+- `AGENTS.md`: quy tắc vận hành AI agent trong repo.
+- `SOUL.md`: nguyên tắc hành xử chung của AI agent.
+- `IDENTITY.md`: danh tính/role của agent trong dự án.
+- `USER.md`: kỳ vọng ổn định của Sếp.
+- `TOOLS.md`: ghi chú công cụ và validation.
+- `HEARTBEAT.md`: checklist bảo trì định kỳ.
+- `docs/TASKS.md`: backlog kỹ thuật.
 
-When changing one identity/operation document, review the others for consistency in the same PR.
+Khi sửa một tài liệu nhận diện/vận hành, phải rà lại các tài liệu còn lại để tránh mâu thuẫn.
 
-## Local state and secrets
+## Local state và secret
 
-Do not commit local runtime state.
+Không commit trạng thái local.
 
-Ignored local state includes:
+Luôn ignore hoặc để ngoài Git:
 
 - `.openclaw/`
 - `.env`
-- `.env.*` except `.env.example`
-- logs, caches, build outputs, and dependency folders.
+- `.env.*`, trừ `.env.example`
+- logs
+- cache
+- build output
+- dependency folders
 
-Never commit tokens, API keys, private host credentials, or personal memory dumps.
+Không đưa token, API key, private host, nội dung memory cá nhân, hoặc transcript local vào repo.
 
-## Validation expectations
+## Validation tối thiểu
 
-For documentation-only changes:
+Với thay đổi tài liệu:
 
 ```bash
 git diff --check
 git status --short --branch
 ```
 
-Also inspect the rendered Markdown mentally for:
+Kiểm tra thêm:
 
-- No stale placeholders.
-- No contradictory instructions between identity docs.
-- No secrets.
-- No accidental local-state paths committed as required production state.
+- Không còn placeholder cũ.
+- Không có secret.
+- Không mâu thuẫn giữa `AGENTS.md`, `SOUL.md`, `IDENTITY.md`, `USER.md`, `TOOLS.md`, `HEARTBEAT.md`.
+- Không biến `.openclaw/` hoặc local state thành yêu cầu production.
 
-For TypeScript/plugin changes, run the strongest available checks in the environment. At minimum:
+Với thay đổi TypeScript/plugin:
 
 ```bash
 git diff --check
-node --check <generated-js-file-if-any>
 ```
 
-If TypeScript tooling exists, prefer:
+Nếu có TypeScript tooling:
 
 ```bash
 npx tsc --noEmit
 ```
 
-If OpenClaw plugin validation exists, use the project-provided validator.
+Nếu có validator của OpenClaw/plugin host, ưu tiên dùng validator chính thức của dự án.
 
-## Communication standard
+## Chuẩn giao tiếp với Sếp
 
-When reporting to Sếp:
+Báo cáo bằng tiếng Việt có dấu, ngắn gọn, kỹ thuật.
 
-- Use Vietnamese.
-- Be concise and technical.
-- State branch, commit, PR link, validation, and remaining risks.
-- Do not claim tests passed unless they were actually run.
-- Clearly separate completed work from local/untracked files.
+Khi xong việc, báo rõ:
 
-## Agent handoff standard
+- Branch.
+- Commit SHA.
+- PR link.
+- File đã đổi.
+- Validation đã chạy.
+- Trạng thái PR/checks.
+- Rủi ro còn lại hoặc file local chưa commit nếu có.
 
-When another AI agent picks up this repo, it should be able to answer:
+## Chuẩn handoff cho AI agent khác
 
-1. What is the project?
-2. What is in scope?
-3. What branch am I on?
-4. What files are safe to edit?
-5. What validation is required?
-6. What cannot be committed?
-7. What decisions belong to Sếp?
+Một AI agent mới phải trả lời được:
 
-If any answer is unclear, update these docs before or during the PR.
+1. Dự án này là gì?
+2. Scope nào được phép sửa?
+3. Đang ở branch/base nào?
+4. File nào được edit trong task hiện tại?
+5. Validation nào bắt buộc?
+6. File nào không được commit?
+7. Quyết định nào thuộc về Sếp?
+
+Nếu câu trả lời chưa rõ, cập nhật tài liệu trước khi báo hoàn tất.
