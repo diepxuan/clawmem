@@ -4,7 +4,8 @@
   "description": "OpenClaw plugin adapter for ClawMem — on-device hybrid memory layer",
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "openclaw": {
     "extensions": [
@@ -13,6 +14,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
   }
 }
