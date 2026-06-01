@@ -22,14 +22,15 @@ Last updated: 2026-06-01
 | --- | --- | --- | --- |
 | T5 | ~~Add integration tests~~ | Done — 42 tests (28 tool + 14 manager tests) with mock API. | `tools.test.ts`, `manager.test.ts` |
 | T6 | ~~Add service readiness handling~~ | Done — HEAD check + waitForApiReady + fail-open. | `api.ts`, `manager.ts`, `index.ts` |
-| T7 | Compile to JS for production | Ship compiled `.js` output instead of raw `.ts` for OpenClaw plugin loading. | Build pipeline |
+| T7 | ~~Compile to JS for production~~ | Closed as not needed right now: OpenClaw 2026.5.28 can load the current `./index.ts` entry and no module-resolution failure is present. Keep runtime validation on `openclaw plugins build`. | Build pipeline |
 | T8 | Auto-recall/auto-capture integration | Implement actual auto-recall before turns and auto-capture after responses (requires ClawMem API support). | `index.ts`, upstream API |
+| T9 | OpenClaw SDK metadata/runtime validation | Use the real OpenClaw 2026.5.28 SDK: `defineToolPlugin` from `openclaw/plugin-sdk/tool-plugin`, `Type` from `typebox`, and `registerMemoryCapability`/`registerMemoryCorpusSupplement` via the plugin runtime API. Keep the plugin API-only, generate manifest metadata with `openclaw plugins build`, then validate with `npm run typecheck`, `npm test -- --run`, and `openclaw plugins build` until all pass. If runtime validation fails, document root cause and next fix here before continuing. | `index.ts`, `openclaw.plugin.json`, `package.json`, `package-lock.json` |
 
 ## Open questions
 
 | ID | Question | Context |
 | --- | --- | --- |
-| Q1 | Should this package ship TypeScript only or compiled JavaScript? | Current entry is `index.ts`; OpenClaw may need `.js` output for plugin loading. |
+| Q1 | Should this package ship TypeScript only or compiled JavaScript? | Closed for current issue: no module-resolution error is present; `./index.ts` remains valid if `openclaw plugins build` passes. Reopen only when a real runtime load failure points to TS/JS resolution. |
 | Q2 | Where is the canonical ClawMem API service maintained? | This plugin depends on the external HTTP API endpoint, currently `http://10.0.0.105:7438`. |
 | Q3 | Which OpenClaw versions are supported? | Plugin behavior depends on OpenClaw plugin/tool registration APIs. |
 

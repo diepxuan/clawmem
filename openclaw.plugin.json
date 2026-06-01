@@ -2,7 +2,7 @@
   "id": "clawmem",
   "kind": "memory",
   "activation": {
-    "onCapabilities": ["tool"]
+    "onStartup": true
   },
   "uiHints": {
     "apiBaseUrl": {
@@ -48,48 +48,70 @@
   },
   "configSchema": {
     "type": "object",
-    "additionalProperties": false,
+    "required": [
+      "apiBaseUrl"
+    ],
     "properties": {
       "apiBaseUrl": {
         "type": "string",
+        "description": "Base URL of the running ClawMem REST API",
         "default": "http://127.0.0.1:7438"
       },
       "apiToken": {
-        "type": "string"
+        "type": "string",
+        "description": "Bearer token for the ClawMem API"
       },
       "tokenBudget": {
         "type": "number",
-        "minimum": 100,
-        "maximum": 4000
+        "description": "Context token budget hint"
       },
       "profile": {
         "type": "string",
-        "enum": ["speed", "balanced", "deep"]
+        "description": "Search profile: speed / balanced / deep",
+        "default": "balanced"
       },
       "enableTools": {
         "type": "boolean",
+        "description": "Register memory agent tools",
         "default": true
       },
       "autoRecall": {
         "type": "boolean",
-        "default": false
+        "description": "Auto-recall memory before each turn"
       },
       "autoCapture": {
         "type": "boolean",
+        "description": "Auto-capture important facts after responses",
         "default": true
       },
       "recallMaxChars": {
         "type": "number",
-        "minimum": 100,
-        "maximum": 10000,
-        "default": 1000
+        "description": "Max chars for recall query text"
       },
       "collections": {
         "type": "array",
         "items": {
           "type": "string"
-        }
+        },
+        "description": "Collections to index/search (default: all)"
       }
-    }
+    },
+    "additionalProperties": false
+  },
+  "name": "ClawMem",
+  "description": "OpenClaw memory plugin — external ClawMem REST API adapter (full memory provider)",
+  "version": "0.0.1",
+  "contracts": {
+    "tools": [
+      "memory_search",
+      "memory_get",
+      "memory_recall",
+      "memory_store",
+      "clawmem_search",
+      "clawmem_get",
+      "clawmem_session_log",
+      "clawmem_timeline",
+      "clawmem_similar"
+    ]
   }
 }
