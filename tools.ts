@@ -2,7 +2,7 @@
  * ClawMem OpenClaw Plugin — Tool registrations
  *
  * Registers a subset of ClawMem's retrieval tools as OpenClaw agent tools.
- * Tools call the ClawMem REST API (clawmem serve) for efficient access.
+ * Tools call an already-running ClawMem REST API for efficient access.
  *
  * Registered tools (retrieval subset per GPT 5.4 recommendation):
  * - clawmem_search: Unified search (keyword/semantic/hybrid)
@@ -12,7 +12,7 @@
  * - clawmem_similar: Find similar documents
  */
 
-import type { ClawMemConfig } from "./shell.js";
+import { apiCall, type ClawMemConfig } from "./api.js";
 
 // =============================================================================
 // Types (matching OpenClaw's tool interface without importing it)
@@ -29,41 +29,6 @@ type Logger = {
   warn: (msg: string) => void;
   error: (msg: string) => void;
 };
-
-// =============================================================================
-// REST API Client
-// =============================================================================
-
-async function apiCall(
-  cfg: ClawMemConfig,
-  method: string,
-  path: string,
-  body?: Record<string, unknown>
-): Promise<{ ok: boolean; status: number; data: any }> {
-  const url = `http://127.0.0.1:${cfg.servePort}${path}`;
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-
-  // Add auth token if configured
-  const token = cfg.env.CLAWMEM_API_TOKEN || process.env.CLAWMEM_API_TOKEN;
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  try {
-    const resp = await fetch(url, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(5000),
-    });
-    const data = await resp.json();
-    return { ok: resp.ok, status: resp.status, data };
-  } catch (err) {
-    return {
-      ok: false,
-      status: 0,
-      data: { error: `ClawMem API unreachable at ${url}: ${String(err)}` },
-    };
-  }
-}
 
 // =============================================================================
 // Tool Definitions

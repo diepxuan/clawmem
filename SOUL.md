@@ -32,17 +32,14 @@ OpenClaw memory plugin adapter — kết nối OpenClaw agents với local ClawM
 
 - TypeScript, ESM, OpenClaw plugin host
 - Entry point: `index.ts`
-- Lifecycle: `engine.ts`
 - Tools: `tools.ts`
-- Shell/API: `shell.ts`
-- Session: `session-state.ts`, `transcript-resolver.ts`
-- Compaction: `compaction-threshold.ts`
+- API: `api.ts`
 
 ### Kiến thức bắt buộc
 
 - Plugin registration qua `api.registerMemoryCapability()`
-- Lifecycle hooks: prompt-time context + post-turn extraction
-- REST API via `clawmem serve`
+- API-only: không lifecycle hooks, không binary, không session transcript resolver
+- REST API external do hệ thống khác supervise
 - Fail-open: binary/API unavailable → continue + log warning
 - External binary `clawmem` — repo chỉ chứa adapter
 

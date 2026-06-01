@@ -22,17 +22,14 @@
 | **Loại** | Memory plugin adapter cho OpenClaw |
 | **Runtime** | TypeScript, ESM, OpenClaw plugin host |
 | **Entry point** | `index.ts` |
-| **Lifecycle** | `engine.ts` |
 | **Tools** | `tools.ts` |
-| **Shell/API** | `shell.ts` |
-| **Session** | `session-state.ts`, `transcript-resolver.ts` |
-| **Compaction** | `compaction-threshold.ts` |
+| **API** | `api.ts` |
 
 ### Kiến thức bắt buộc
 
 - Plugin registration qua `api.registerMemoryCapability()`
-- Lifecycle hooks: prompt-time context surfacing + post-turn extraction
-- REST API service lifecycle via `clawmem serve`
+- API-only agent tools gọi ClawMem REST API
+- Không start/stop runtime process; dùng external REST API
 - Fail-open: khi ClawMem binary/API unavailable → continue + log warning
 - External binary `clawmem` — repo chỉ chứa adapter
 

@@ -37,7 +37,7 @@ npx tsc --noEmit
 ### ClawMem runtime
 ```bash
 clawmem --help
-clawmem serve --port 7438
+External ClawMem API must already be running at configured apiBaseUrl
 ```
 
 If `clawmem` binary missing → not a blocker for docs PR. Report as environment limitation.
