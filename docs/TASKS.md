@@ -13,17 +13,15 @@ Last updated: 2026-06-01
 | ID | Task | Details | Files |
 | --- | --- | --- | --- |
 | T1 | Keep README current | README should stay aligned with config schema, tools, hooks, and service behavior. | `README.md`, `openclaw.plugin.json`, `tools.ts`, `engine.ts` |
-| T2 | Document ClawMem hook contracts | List required `clawmem hook <name>` commands and expected input/output shape. | `README.md` or `docs/HOOKS.md` |
-| T3 | Add changelog | Track plugin changes, compatibility notes, and breaking changes. | `CHANGELOG.md` |
-| T4 | Define OpenClaw compatibility range | Code comments reference OpenClaw internal paths. Document target version/commit compatibility. | `README.md`, `docs/COMPATIBILITY.md` |
+| T2 | Define OpenClaw compatibility range | Code comments reference OpenClaw internal paths. Document target version/commit compatibility. | `README.md`, `docs/COMPATIBILITY.md` |
 
 ## Nice to have
 
 | ID | Task | Details | Files |
 | --- | --- | --- | --- |
-| T5 | Improve token estimation | `estimateTokensFromMessages` uses a chars/4 heuristic. Consider model-aware estimation if needed. | `compaction-threshold.ts` |
-| T6 | Add integration tests | Use a mock `clawmem serve` and verify tool calls plus lifecycle hook flows. | test suite |
-| T7 | Add service readiness handling | Check whether `clawmem serve` exposes or should expose a health endpoint before tools depend on it. | `shell.ts`, upstream ClawMem runtime |
+| T4 | Improve token estimation | `estimateTokensFromMessages` uses a chars/4 heuristic. Consider model-aware estimation if needed. | `compaction-threshold.ts` |
+| T5 | Add integration tests | Use a mock `clawmem serve` and verify tool calls plus lifecycle hook flows. | test suite |
+| T6 | Add service readiness handling | Check whether `clawmem serve` exposes or should expose a health endpoint before tools depend on it. | `shell.ts`, upstream ClawMem runtime |
 
 ## Open questions
 
