@@ -144,3 +144,6 @@ vite.config.ts.timestamp-*
 
 # OpenClaw local runtime state
 .openclaw/
+
+# npm lock file — project does not track lock
+package-lock.json
