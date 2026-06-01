@@ -13,7 +13,7 @@ Last updated: 2026-06-01
 | ID | Task | Details | Files |
 | --- | --- | --- | --- |
 | T1 | Keep README current | README should stay aligned with config schema, tools, hooks, and service behavior. | `README.md`, `openclaw.plugin.json`, `tools.ts`, `engine.ts` |
-| T2 | Define OpenClaw compatibility range | Code comments reference OpenClaw internal paths. Document target version/commit compatibility. | `README.md`, `docs/COMPATIBILITY.md` |
+| T2 | ~~Define OpenClaw compatibility range~~ | Completed — added `docs/COMPATIBILITY.md` |
 
 ## Nice to have
 
