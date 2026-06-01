@@ -238,9 +238,20 @@ const clawmemPlugin = {
     api.registerService({
       id: "clawmem-api",
       async start(svcCtx: { logger: Logger }) {
-        const { spawnBackground } = await import("./shell.js");
+        const { spawnBackground, waitForServiceReady } = await import("./shell.js");
         serveChild = spawnBackground(cfg, ["serve", "--port", String(cfg.servePort)], svcCtx.logger);
         svcCtx.logger.info(`clawmem: REST API spawned (pid=${serveChild.pid})`);
+
+        // Wait for the service to become ready before declaring the service started.
+        // This prevents agent tools from hitting a cold API and getting spurious errors.
+        const ready = await waitForServiceReady(cfg.servePort, 10, 500, svcCtx.logger);
+        if (ready) {
+          svcCtx.logger.info(`clawmem: REST API ready on port ${cfg.servePort}`);
+        } else {
+          svcCtx.logger.warn(
+            `clawmem: REST API did not confirm readiness on port ${cfg.servePort}; tools will fail-open`,
+          );
+        }
       },
       stop() {
         if (serveChild && !serveChild.killed) {
