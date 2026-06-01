@@ -24,7 +24,7 @@ export function normalizeApiBaseUrl(value: unknown): string {
 
 export function resolveApiToken(value: unknown): string | undefined {
   if (typeof value === "string" && value.trim()) return value.trim();
-  return process.env.CLAWMEM_API_TOKEN || undefined;
+  return undefined;
 }
 
 export async function waitForApiReady(

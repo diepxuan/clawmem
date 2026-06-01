@@ -80,7 +80,8 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
+# ClawMem: we DO need dist/ for openclaw plugins install (compiled JS)
+# dist
 .output
 
 # Gatsby files

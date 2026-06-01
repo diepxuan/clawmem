@@ -2,14 +2,17 @@
   "name": "clawmem-openclaw-plugin",
   "version": "0.0.1",
   "description": "OpenClaw plugin adapter for ClawMem — on-device hybrid memory layer",
+  "main": "dist/index.js",
   "type": "module",
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
   },
   "openclaw": {
     "extensions": [
-      "./index.ts"
+      "./dist/index.js"
     ]
   },
   "devDependencies": {

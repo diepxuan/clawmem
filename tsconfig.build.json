@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "allowImportingTsExtensions": false
+  },
+  "include": ["*.ts", "api.ts", "manager.ts", "tools.ts", "shell.ts", "session-state.ts", "transcript-resolver.ts", "compaction-threshold.ts", "openclaw-memory-types.ts"],
+  "exclude": ["*.test.ts", "dist", "node_modules"]
+}
