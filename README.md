@@ -1,20 +1,22 @@
 # ClawMem OpenClaw Plugin
 
-ClawMem OpenClaw Plugin connects OpenClaw agents to an already-running ClawMem REST API.
+ClawMem OpenClaw Plugin connects OpenClaw agents to an already-running ClawMem REST API **as a full memory provider** — not just standalone tools.
 
-This repository is now API-only:
+This plugin:
 
-- It does **not** execute a `clawmem` binary.
-- It does not start or stop any runtime process.
-- It does not run command-line hook integrations.
-- It does **not** register OpenClaw lifecycle hooks for extraction/compaction.
-- It only registers OpenClaw agent tools that call the configured ClawMem HTTP API.
+- **Owns the active memory slot** — registers a real `MemorySearchManager` backed by the ClawMem REST API.
+- **Exposes standard OpenClaw memory tools** — `memory_search`, `memory_get`, `memory_recall`, `memory_store`.
+- **Registers a corpus supplement** — `memory_search corpus=all` includes ClawMem data.
+- **Retains legacy aliases** — `clawmem_search`, `clawmem_get`, etc. for backward compatibility.
 
 ## Architecture
 
 ```text
 OpenClaw agent
-  └─ ClawMem plugin tools
+  └─ ClawMem memory plugin
+       ├─ MemorySearchManager (real, not stub)
+       ├─ Standard tools: memory_search, memory_get, memory_recall, memory_store
+       ├─ Legacy tools: clawmem_search, clawmem_get, clawmem_session_log, clawmem_timeline, clawmem_similar
        └─ HTTP REST API
             └─ external ClawMem service
 ```
@@ -24,134 +26,107 @@ The external ClawMem API is owned outside this plugin. Start and supervise it wi
 ## Files
 
 ```text
-index.ts                 # OpenClaw plugin registration
-api.ts                   # REST API client + readiness probe
-tools.ts                 # Agent tools backed by REST API
-tools.test.ts            # Tool/API integration tests
-openclaw.plugin.json     # Plugin config schema
-CHANGELOG.md             # Release notes
-docs/TASKS.md            # Project backlog
+index.ts                     # OpenClaw plugin registration (memory capability + runtime)
+manager.ts                   # ClawMemMemorySearchManager — MemorySearchManager implementation
+api.ts                       # REST API client + readiness probe
+tools.ts                     # Agent tools (standard + legacy)
+openclaw-memory-types.ts     # OpenClaw memory type shims
+tools.test.ts                # Tool integration tests (28 tests)
+manager.test.ts              # MemorySearchManager unit tests (14 tests)
+openclaw.plugin.json         # Plugin config schema
+CHANGELOG.md                 # Release notes
+docs/TASKS.md                # Project backlog
 ```
 
 ## Configuration
 
-### `apiBaseUrl`
+### Required
 
-Type: string
-Default: `http://127.0.0.1:7438`
+| Key | Type | Default | Description |
+| --- | ---- | ------- | ----------- |
+| `apiBaseUrl` | string | `http://127.0.0.1:7438` | Base URL of the running ClawMem REST API |
 
-Base URL for the already-running ClawMem REST API. The current shared ClawMem API URL used by this project is `http://10.0.0.105:7438`.
+### Optional
 
-Example:
+| Key | Type | Default | Description |
+| --- | ---- | ------- | ----------- |
+| `apiToken` | string | `$CLAWMEM_API_TOKEN` | Bearer token for the ClawMem API |
+| `enableTools` | boolean | `true` | Register memory agent tools |
+| `autoRecall` | boolean | `false` | Auto-recall memory before each turn |
+| `autoCapture` | boolean | `true` | Auto-capture important facts after responses |
+| `recallMaxChars` | number | `1000` | Max chars for recall query text |
+| `collections` | string[] | all | Collections to index/search |
+| `profile` | string | `balanced` | `speed` (400) / `balanced` (800) / `deep` (1200) |
+| `tokenBudget` | number | profile-derived | Context token budget hint |
 
-```json
+### Enable as active memory provider
+
+```json5
 {
-  "apiBaseUrl": "http://10.0.0.105:7438"
+  plugins: {
+    slots: { memory: "clawmem" },
+    entries: {
+      clawmem: {
+        enabled: true,
+        config: {
+          apiBaseUrl: "http://127.0.0.1:7438",
+          autoRecall: true,
+          autoCapture: true,
+        },
+      },
+    },
+  },
 }
 ```
 
-### `apiToken`
-
-Type: string
-Default: unset
-
-Optional bearer token for the ClawMem API. If omitted, the plugin uses `CLAWMEM_API_TOKEN` from the environment.
-
-### `enableTools`
-
-Type: boolean
-Default: true
-
-Registers ClawMem agent tools when enabled.
-
-### `profile`
-
-Type: string
-Allowed: `speed`, `balanced`, `deep`
-Default: `balanced`
-
-Retained as a compatibility/profile hint.
-
-### `tokenBudget`
-
-Type: number
-Default: profile-derived (`speed=400`, `balanced=800`, `deep=1200`)
-
-Retained as a compatibility/profile hint.
-
-## ClawMem API server
-
-This plugin only connects to an existing ClawMem HTTP REST API. It does not ship, execute, or document any local `clawmem` binary.
-
-Current API endpoint used by this project:
-
-```text
-http://10.0.0.105:7438
-```
-
-When the API server requires a token, every request must include:
-
-```text
-Authorization: Bearer <token>
-```
-
-Configure the same token through plugin config `apiToken` or the OpenClaw process environment variable `CLAWMEM_API_TOKEN`.
-
-Example search request:
-
-```bash
-curl -X POST http://10.0.0.105:7438/search \
-  -H 'Content-Type: application/json' \
-  -d '{"query":"authentication decisions","mode":"hybrid","compact":true}'
-```
-
-### API endpoints
-
-| Method | Path | Description |
-| --- | --- | --- |
-| GET | `/health` | Liveness probe, version, and document count |
-| GET | `/stats` | Full index statistics |
-| POST | `/search` | Unified search (`mode`: `auto`, `keyword`, `semantic`, `hybrid`) |
-| POST | `/retrieve` | Smart retrieve with auto-routing (`mode`: `auto`, `keyword`, `semantic`, `causal`, `timeline`, `hybrid`) |
-| GET | `/documents/:docid` | Single document by 6-character hash prefix |
-| GET | `/documents?pattern=...` | Multi-get by glob pattern |
-| GET | `/timeline/:docid` | Temporal neighborhood (`before`/`after`) |
-| GET | `/sessions` | Recent session history |
-| GET | `/collections` | List all collections |
-| GET | `/lifecycle/status` | Active, archived, pinned, and snoozed counts |
-| POST | `/documents/:docid/pin` | Pin or unpin a document |
-| POST | `/documents/:docid/snooze` | Snooze a document until a date |
-| POST | `/documents/:docid/forget` | Deactivate a document |
-| POST | `/lifecycle/sweep` | Archive stale docs; dry run by default |
-| GET | `/graph/causal/:docid` | Causal chain traversal |
-| GET | `/graph/similar/:docid` | k-nearest-neighbor semantic neighbors |
-| GET | `/export` | Full vault export as JSON |
-| POST | `/reindex` | Trigger a re-scan |
-| POST | `/graphs/build` | Rebuild temporal and semantic graphs |
-
 ## Registered tools
 
-The plugin exposes a retrieval-focused subset of the API to OpenClaw agents:
+### Standard (OpenClaw-compatible)
 
 | Tool | API endpoint | Purpose |
 | --- | --- | --- |
-| `clawmem_search` | `POST /search` | Search memory with keyword/semantic/hybrid modes |
-| `clawmem_get` | `GET /documents/:docid` | Fetch a full memory document |
-| `clawmem_session_log` | `GET /sessions?limit=N` | List recent sessions |
+| `memory_search` | `POST /search` | Search memory with keyword/semantic/hybrid modes. Supports `corpus` param for sessions. |
+| `memory_get` | `GET /documents/:docid` | Fetch full memory document by docid or path. Supports `from`/`lines` for range reads. |
+| `memory_recall` | `POST /search` | Recall merged context for the current query (suitable for prompt injection). |
+| `memory_store` | `POST /documents` | Save a new memory entry with optional collection and title. |
+
+### Legacy (backward-compatible)
+
+| Tool | API endpoint | Purpose |
+| --- | --- | --- |
+| `clawmem_search` | `POST /search` | Alias for memory_search |
+| `clawmem_get` | `GET /documents/:docid` | Alias for memory_get |
+| `clawmem_session_log` | `GET /sessions` | List recent sessions |
 | `clawmem_timeline` | `GET /timeline/:docid` | Show temporal context around a document |
-| `clawmem_similar` | `GET /graph/similar/:docid?limit=N` | Find similar documents |
+| `clawmem_similar` | `GET /graph/similar/:docid` | Find semantically similar documents |
 
-Other API endpoints are available for dashboards, non-MCP agents, cross-machine access, lifecycle operations, and programmatic maintenance, but they are not all registered as OpenClaw tools.
+## Memory capability
 
-All tools fail open: if the API is unreachable or returns an error, the tool returns a readable text error instead of crashing the agent.
+### MemorySearchManager
+
+The plugin implements OpenClaw's `MemorySearchManager` interface:
+
+- **`search(query, opts)`** — maps to `POST /search` with `MemorySearchResult[]` output
+- **`readFile(params)`** — maps to `GET /documents/:docid` with line-range support
+- **`status()`** — reports `backend: "clawmem"` and API reachability
+- **`sync(params?)`** — triggers reindex via `POST /reindex` if available
+- **`probeEmbeddingAvailability()`** — HEAD check on API base URL
+- **`probeVectorAvailability()`** — delegates to embedding probe
+
+### Corpus supplement
+
+The plugin registers a corpus supplement (`corpus: "clawmem"`) so that:
+
+- `memory_search corpus=all` includes ClawMem results alongside builtin memory
+- `memory_get` can resolve ClawMem documents via the shared corpus system
 
 ## API readiness
 
 The plugin registers a lightweight readiness service that checks the configured `apiBaseUrl` at startup.
 
-- Any HTTP response counts as ready.
+- Any HTTP response < 500 counts as ready.
 - If the API is unreachable, the plugin logs a warning and continues.
-- The plugin never starts or stops the ClawMem runtime.
+- Tools fail open — returning readable error text instead of crashing.
 
 ## Development
 

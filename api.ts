@@ -4,6 +4,10 @@ export type ClawMemConfig = {
   tokenBudget: number;
   profile: string;
   enableTools: boolean;
+  autoRecall?: boolean;
+  autoCapture?: boolean;
+  recallMaxChars?: number;
+  collections?: string[];
 };
 
 export type Logger = {

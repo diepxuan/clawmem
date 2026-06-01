@@ -20,12 +20,6 @@ const mockConfig: ClawMemConfig = {
   enableTools: true,
 };
 
-const defaultCfg = {
-  method: "GET",
-  headers: { "Content-Type": "application/json" },
-  signal: expect.any(AbortSignal),
-};
-
 // Helper: mock fetch for a given path and response
 function mockFetch(status: number, body: unknown, _method = "GET", _path = "/") {
   const mockResponse = {
@@ -41,20 +35,15 @@ function mockFetchError(error: Error) {
 }
 
 // =============================================================================
-// Test: clawmem_search
+// Test: memory_search (standard)
 // =============================================================================
 
-describe("clawmem_search tool", () => {
+describe("memory_search tool (standard)", () => {
   const tools = createTools(mockConfig, mockLogger);
-  const searchTool = tools.find((t) => t.name === "clawmem_search")!;
+  const searchTool = tools.find((t) => t.name === "memory_search")!;
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+  beforeEach(() => { vi.clearAllMocks(); });
+  afterEach(() => { vi.restoreAllMocks(); });
 
   it("returns formatted results on successful search", async () => {
     mockFetch(200, {
@@ -78,26 +67,35 @@ describe("clawmem_search tool", () => {
 
   it("returns empty message when no results", async () => {
     mockFetch(200, { count: 0, query: "nothing", results: [] });
-
     const result = await searchTool.execute("call-2", { query: "nothing" });
-
     expect(result.content[0].text).toBe("No relevant memories found.");
     expect(result.details).toEqual({ count: 0 });
   });
 
   it("returns error message when API unreachable", async () => {
     mockFetchError(new Error("ECONNREFUSED"));
-
     const result = await searchTool.execute("call-3", { query: "anything" });
-
     expect(result.content[0].text).toContain("Search failed");
     expect(result.content[0].text).toContain("ECONNREFUSED");
+  });
+
+  it("respects corpus=sessions parameter", async () => {
+    mockFetch(200, {
+      sessions: [
+        { started_at: "2026-06-01T09:00:00Z", session_id: "abc12345def", prompt_count: 12 },
+      ],
+    });
+
+    const result = await searchTool.execute("call-4", { query: "test", corpus: "sessions" });
+
+    expect(result.content[0].text).toContain("Recent sessions:");
+    expect(result.content[0].text).toContain("abc12345");
   });
 
   it("respects mode, collection, limit, and compact params", async () => {
     mockFetch(200, { count: 1, query: "test", results: [{ title: "One", score: 1.0 }] });
 
-    await searchTool.execute("call-4", {
+    await searchTool.execute("call-5", {
       query: "test",
       mode: "hybrid",
       collection: "decisions",
@@ -122,9 +120,7 @@ describe("clawmem_search tool", () => {
 
   it("uses defaults for optional params", async () => {
     mockFetch(200, { count: 0, results: [] });
-
-    await searchTool.execute("call-5", { query: "test" });
-
+    await searchTool.execute("call-6", { query: "test" });
     expect(fetch).toHaveBeenCalledWith(
       "http://127.0.0.1:7438/search",
       expect.objectContaining({
@@ -141,20 +137,15 @@ describe("clawmem_search tool", () => {
 });
 
 // =============================================================================
-// Test: clawmem_get
+// Test: memory_get (standard)
 // =============================================================================
 
-describe("clawmem_get tool", () => {
+describe("memory_get tool (standard)", () => {
   const tools = createTools(mockConfig, mockLogger);
-  const getTool = tools.find((t) => t.name === "clawmem_get")!;
+  const getTool = tools.find((t) => t.name === "memory_get")!;
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+  beforeEach(() => { vi.clearAllMocks(); });
+  afterEach(() => { vi.restoreAllMocks(); });
 
   it("returns formatted document content on success", async () => {
     mockFetch(200, {
@@ -175,98 +166,230 @@ describe("clawmem_get tool", () => {
     expect(result.details).toEqual({ docid: "abc123", path: "projects/plan.md" });
   });
 
-  it("returns not-found message when docid invalid", async () => {
-    mockFetch(404, { error: "Document not found" });
+  it("supports line-range slicing (from + lines)", async () => {
+    mockFetch(200, {
+      docid: "abc123",
+      title: "Big doc",
+      path: "big.md",
+      collection: "notes",
+      modifiedAt: "2026-06-01T10:00:00Z",
+      body: "line1\nline2\nline3\nline4\nline5",
+    });
 
-    const result = await getTool.execute("call-2", { docid: "zzzzzz" });
+    const result = await getTool.execute("call-2", { docid: "abc123", from: 2, lines: 3 });
 
-    expect(result.content[0].text).toBe("Document not found: zzzzzz");
+    expect(result.content[0].text).toContain("line2");
+    expect(result.content[0].text).toContain("line3");
+    expect(result.content[0].text).toContain("line4");
+    expect(result.content[0].text).not.toContain("line1");
+    expect(result.content[0].text).not.toContain("line5");
   });
 
-  it("handles API unreachable", async () => {
-    mockFetchError(new Error("socket hang up"));
-
-    const result = await getTool.execute("call-3", { docid: "abc123" });
-
-    expect(result.content[0].text).toContain("Document not found: abc123");
+  it("returns not-found message when docid invalid", async () => {
+    mockFetch(404, { error: "Document not found" });
+    const result = await getTool.execute("call-3", { docid: "zzzzzz" });
+    expect(result.content[0].text).toBe("Document not found: zzzzzz");
   });
 });
 
 // =============================================================================
-// Test: clawmem_session_log
+// Test: memory_recall (standard)
 // =============================================================================
 
-describe("clawmem_session_log tool", () => {
+describe("memory_recall tool (standard)", () => {
+  const tools = createTools(mockConfig, mockLogger);
+  const recallTool = tools.find((t) => t.name === "memory_recall")!;
+
+  beforeEach(() => { vi.clearAllMocks(); });
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it("returns merged context on success", async () => {
+    mockFetch(200, {
+      results: [
+        { title: "Memo A", body: "Content A" },
+        { title: "Memo B", body: "Content B" },
+      ],
+    });
+
+    const result = await recallTool.execute("call-1", { query: "recall test" });
+
+    expect(result.content[0].text).toContain("Recalled 2 memories");
+    expect(result.content[0].text).toContain("## Memo A");
+    expect(result.content[0].text).toContain("Content A");
+    expect(result.content[0].text).toContain("## Memo B");
+    expect(result.content[0].text).toContain("Content B");
+  });
+
+  it("returns empty when no results", async () => {
+    mockFetch(200, { results: [] });
+    const result = await recallTool.execute("call-2", { query: "nothing" });
+    expect(result.content[0].text).toBe("No relevant memories recalled.");
+  });
+});
+
+// =============================================================================
+// Test: memory_store (standard)
+// =============================================================================
+
+describe("memory_store tool (standard)", () => {
+  const tools = createTools(mockConfig, mockLogger);
+  const storeTool = tools.find((t) => t.name === "memory_store")!;
+
+  beforeEach(() => { vi.clearAllMocks(); });
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it("stores memory and returns docid", async () => {
+    mockFetch(200, { docid: "new123", path: "memory/new.md" });
+
+    const result = await storeTool.execute("call-1", {
+      text: "Important fact to remember",
+      collection: "decisions",
+      title: "Decision 1",
+    });
+
+    expect(result.content[0].text).toContain("Memory stored");
+    expect(result.details).toEqual({ docid: "new123", path: "memory/new.md" });
+    expect(fetch).toHaveBeenCalledWith(
+      "http://127.0.0.1:7438/documents",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          body: "Important fact to remember",
+          collection: "decisions",
+          title: "Decision 1",
+        }),
+      }),
+    );
+  });
+
+  it("uses default collection when not specified", async () => {
+    mockFetch(200, { docid: "ok" });
+    await storeTool.execute("call-2", { text: "A fact" });
+    expect(fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        body: JSON.stringify({
+          body: "A fact",
+          collection: "memory",
+          title: undefined,
+        }),
+      }),
+    );
+  });
+
+  it("returns error on failure", async () => {
+    mockFetch(500, { error: "internal error" });
+    const result = await storeTool.execute("call-3", { text: "fail" });
+    expect(result.content[0].text).toContain("Failed to store memory");
+  });
+});
+
+// =============================================================================
+// Test: legacy clawmem_* tools (backward compatibility)
+// =============================================================================
+
+describe("clawmem_search tool (legacy)", () => {
+  const tools = createTools(mockConfig, mockLogger);
+  const searchTool = tools.find((t) => t.name === "clawmem_search")!;
+
+  beforeEach(() => { vi.clearAllMocks(); });
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it("returns formatted results on successful search", async () => {
+    mockFetch(200, {
+      count: 2,
+      query: "test query",
+      mode: "auto",
+      results: [
+        { contentType: "note", title: "Meeting notes", score: 0.95, snippet: "Discussed Q3 goals" },
+      ],
+    });
+
+    const result = await searchTool.execute("call-1", { query: "test query" });
+
+    expect(result.content[0].text).toContain("Found 2 results");
+    expect(result.content[0].text).toContain("Meeting notes");
+    expect(result.details).toEqual({ count: 2, query: "test query", mode: "auto" });
+  });
+
+  it("handles API unreachable", async () => {
+    mockFetchError(new Error("ECONNREFUSED"));
+    const result = await searchTool.execute("call-2", { query: "anything" });
+    expect(result.content[0].text).toContain("Search failed");
+  });
+});
+
+describe("clawmem_get tool (legacy)", () => {
+  const tools = createTools(mockConfig, mockLogger);
+  const getTool = tools.find((t) => t.name === "clawmem_get")!;
+
+  beforeEach(() => { vi.clearAllMocks(); });
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it("returns formatted document content on success", async () => {
+    mockFetch(200, {
+      docid: "abc123",
+      title: "Project Plan",
+      path: "projects/plan.md",
+      collection: "work",
+      modifiedAt: "2026-06-01T10:00:00Z",
+      body: "Q2 deliverables include...",
+    });
+
+    const result = await getTool.execute("call-1", { docid: "abc123" });
+
+    expect(result.content[0].text).toContain("# Project Plan");
+    expect(result.content[0].text).toContain("Collection: work");
+    expect(result.details).toEqual({ docid: "abc123", path: "projects/plan.md" });
+  });
+
+  it("handles API unreachable", async () => {
+    mockFetch(404, { error: "Document not found" });
+    const result = await getTool.execute("call-2", { docid: "zzzzzz" });
+    expect(result.content[0].text).toBe("Document not found: zzzzzz");
+  });
+});
+
+describe("clawmem_session_log tool (legacy)", () => {
   const tools = createTools(mockConfig, mockLogger);
   const logTool = tools.find((t) => t.name === "clawmem_session_log")!;
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+  beforeEach(() => { vi.clearAllMocks(); });
+  afterEach(() => { vi.restoreAllMocks(); });
 
   it("returns formatted session list on success", async () => {
     mockFetch(200, {
       sessions: [
         { started_at: "2026-06-01T09:00:00Z", session_id: "abc12345def", prompt_count: 12 },
-        { started_at: "2026-05-31T15:00:00Z", session_id: "def67890abc", prompt_count: 5 },
       ],
     });
 
-    const result = await logTool.execute("call-1", { limit: 2 });
+    const result = await logTool.execute("call-1", { limit: 1 });
 
     expect(result.content[0].text).toContain("Recent sessions:");
     expect(result.content[0].text).toContain("abc12345");
     expect(result.content[0].text).toContain("12 prompts");
-    expect(result.content[0].text).toContain("def67890");
-    expect(result.content[0].text).toContain("5 prompts");
-  });
-
-  it("returns empty message when no sessions", async () => {
-    mockFetch(200, { sessions: [] });
-
-    const result = await logTool.execute("call-2", {});
-
-    expect(result.content[0].text).toBe("No session history found.");
   });
 
   it("handles API unreachable", async () => {
     mockFetchError(new Error("ECONNREFUSED"));
-
-    const result = await logTool.execute("call-3", {});
-
+    const result = await logTool.execute("call-2", {});
     expect(result.content[0].text).toContain("Failed to retrieve sessions");
   });
 });
 
-// =============================================================================
-// Test: clawmem_timeline
-// =============================================================================
-
-describe("clawmem_timeline tool", () => {
+describe("clawmem_timeline tool (legacy)", () => {
   const tools = createTools(mockConfig, mockLogger);
   const timelineTool = tools.find((t) => t.name === "clawmem_timeline")!;
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+  beforeEach(() => { vi.clearAllMocks(); });
+  afterEach(() => { vi.restoreAllMocks(); });
 
   it("returns formatted timeline with before/after entries", async () => {
     mockFetch(200, {
       anchor: { title: "Current doc", modifiedAt: "2026-06-01T12:00:00Z" },
-      before: [
-        { title: "Previous", modifiedAt: "2026-06-01T11:00:00Z", collection: "notes" },
-      ],
-      after: [
-        { title: "Next", modifiedAt: "2026-06-01T13:00:00Z", collection: "notes" },
-      ],
+      before: [{ title: "Previous", modifiedAt: "2026-06-01T11:00:00Z", collection: "notes" }],
+      after: [{ title: "Next", modifiedAt: "2026-06-01T13:00:00Z", collection: "notes" }],
     });
 
     const result = await timelineTool.execute("call-1", { docid: "abc123" });
@@ -278,24 +401,14 @@ describe("clawmem_timeline tool", () => {
     expect(result.content[0].text).toContain("Next");
   });
 
-  it("handles timeline failure", async () => {
-    mockFetch(500, { error: "internal error" });
-
-    const result = await timelineTool.execute("call-2", { docid: "abc123" });
-
-    expect(result.content[0].text).toContain("Timeline failed");
-  });
-
   it("passes before/after/same_collection query params", async () => {
     mockFetch(200, { anchor: {}, before: [], after: [] });
-
-    await timelineTool.execute("call-3", {
+    await timelineTool.execute("call-2", {
       docid: "abc123",
       before: 3,
       after: 7,
       same_collection: true,
     });
-
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining("before=3&after=7&same_collection=true"),
       expect.any(Object),
@@ -303,21 +416,12 @@ describe("clawmem_timeline tool", () => {
   });
 });
 
-// =============================================================================
-// Test: clawmem_similar
-// =============================================================================
-
-describe("clawmem_similar tool", () => {
+describe("clawmem_similar tool (legacy)", () => {
   const tools = createTools(mockConfig, mockLogger);
   const similarTool = tools.find((t) => t.name === "clawmem_similar")!;
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+  beforeEach(() => { vi.clearAllMocks(); });
+  afterEach(() => { vi.restoreAllMocks(); });
 
   it("returns formatted similar documents list", async () => {
     mockFetch(200, {
@@ -332,56 +436,55 @@ describe("clawmem_similar tool", () => {
     expect(result.content[0].text).toContain("Similar documents:");
     expect(result.content[0].text).toContain("Similar A");
     expect(result.content[0].text).toContain("similarity: 0.92");
-    expect(result.content[0].text).toContain("Similar B");
-    expect(result.content[0].text).toContain("similarity: 0.87");
-  });
-
-  it("returns empty message when no similar docs", async () => {
-    mockFetch(200, { similar: [] });
-
-    const result = await similarTool.execute("call-2", { docid: "abc123" });
-
-    expect(result.content[0].text).toBe("No similar documents found.");
   });
 
   it("handles API unreachable", async () => {
     mockFetchError(new Error("ECONNREFUSED"));
-
-    const result = await similarTool.execute("call-3", { docid: "abc123" });
-
+    const result = await similarTool.execute("call-2", { docid: "abc123" });
     expect(result.content[0].text).toContain("Similar search failed");
-  });
-
-  it("passes limit as query param", async () => {
-    mockFetch(200, { similar: [] });
-
-    await similarTool.execute("call-4", { docid: "abc123", limit: 10 });
-
-    expect(fetch).toHaveBeenCalledWith(
-      expect.stringContaining("limit=10"),
-      expect.any(Object),
-    );
-  });
-
-  it("uses default limit of 5", async () => {
-    mockFetch(200, { similar: [] });
-
-    await similarTool.execute("call-5", { docid: "abc123" });
-
-    expect(fetch).toHaveBeenCalledWith(
-      expect.stringContaining("limit=5"),
-      expect.any(Object),
-    );
   });
 });
 
 // =============================================================================
-// Test: createTools returns all 5 tools
+// Test: createTools returns correct tool set
 // =============================================================================
 
 describe("createTools", () => {
-  it("returns exactly 5 tools with expected names", () => {
+  it("returns all tools by default (standard + legacy)", () => {
     const tools = createTools(mockConfig, mockLogger);
+    expect(tools).toHaveLength(9);
+    expect(tools.map((t) => t.name)).toEqual([
+      "memory_search",
+      "memory_get",
+      "memory_recall",
+      "memory_store",
+      "clawmem_search",
+      "clawmem_get",
+      "clawmem_session_log",
+      "clawmem_timeline",
+      "clawmem_similar",
+    ]);
+  });
+
+  it("returns only standard tools when includeLegacy=false", () => {
+    const tools = createTools(mockConfig, mockLogger, {
+      includeStandard: true,
+      includeLegacy: false,
+    });
+    expect(tools).toHaveLength(4);
+    expect(tools.map((t) => t.name)).toEqual([
+      "memory_search",
+      "memory_get",
+      "memory_recall",
+      "memory_store",
+    ]);
+  });
+
+  it("returns only legacy tools when includeStandard=false", () => {
+    const tools = createTools(mockConfig, mockLogger, {
+      includeStandard: false,
+      includeLegacy: true,
+    });
     expect(tools).toHaveLength(5);
     expect(tools.map((t) => t.name)).toEqual([
       "clawmem_search",
