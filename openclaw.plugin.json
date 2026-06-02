@@ -97,7 +97,7 @@
   },
   "name": "ClawMem",
   "description": "OpenClaw memory plugin — external ClawMem REST API adapter (full memory provider)",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "contracts": {
     "tools": [
       "memory_search",
