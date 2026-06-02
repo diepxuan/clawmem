@@ -11,6 +11,7 @@
 import { Type } from "typebox";
 import { defineToolPlugin } from "openclaw/plugin-sdk/tool-plugin";
 import {
+  apiCall,
   normalizeApiBaseUrl,
   resolveApiToken,
   waitForApiReady,
@@ -258,36 +259,4 @@ function getOrCreateManager(
 ): ClawMemMemorySearchManager {
   if (!_mgr) _mgr = new ClawMemMemorySearchManager(cfg, logger);
   return _mgr;
-}
-
-async function apiCall(
-  cfg: ClawMemConfig,
-  method: string,
-  path: string,
-  body?: Record<string, unknown>,
-): Promise<{ ok: boolean; status: number; data: any }> {
-  const url = `${cfg.apiBaseUrl}${path}`;
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (cfg.apiToken) headers.Authorization = `Bearer ${cfg.apiToken}`;
-  try {
-    const resp = await fetch(url, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(10000),
-    });
-    let data: unknown;
-    try {
-      data = await resp.json();
-    } catch {
-      data = {};
-    }
-    return { ok: resp.ok, status: resp.status, data };
-  } catch (err) {
-    return {
-      ok: false,
-      status: 0,
-      data: { error: `ClawMem API unreachable at ${url}: ${String(err)}` },
-    };
-  }
 }

@@ -4,26 +4,25 @@ All notable changes to the ClawMem OpenClaw Plugin are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## Unreleased
+## [0.0.2] - 2026-06-02
 
 ### Added
 
-- **Full memory provider integration** — plugin now owns the active memory slot via `MemorySearchManager`.
-- `ClawMemMemorySearchManager` — implements OpenClaw's `MemorySearchManager` interface (search, readFile, status, sync, probe*).
-- Standard OpenClaw memory tools: `memory_search`, `memory_get`, `memory_recall`, `memory_store`.
-- Corpus supplement registration — enables `memory_search corpus=all` to include ClawMem data.
-- Config knobs: `autoRecall`, `autoCapture`, `recallMaxChars`, `collections`.
-- `openclaw-memory-types.ts` — local type shims for OpenClaw memory interfaces.
-- `manager.test.ts` — 14 unit tests for `ClawMemMemorySearchManager`.
+- **Hermes Agent integration** — bridge module with 5 ClawMem tools for Hermes consumption.
+- `hermes/bridge.ts` — `clawmem_search`, `clawmem_get`, `clawmem_store`, `clawmem_session_log`, `clawmem_similar` via shared API client.
+- `hermes/bridge.test.ts` — 9 tests (search, get, store, session_log, similar, fail-open, auth).
+- `hermes/SKILL.md` — Hermes skill template with tool documentation, usage patterns, troubleshooting.
+- `hermes/README.md` — integration quick start and configuration guide.
+- README section documenting Hermes compatibility.
 
 ### Changed
 
-- Bump version to `0.1.0` (memory provider integration).
-- `tools.ts` refactored into standard tools (`memory_*`) and legacy tools (`clawmem_*`).
-- `index.ts` now calls `api.registerMemoryCapability("clawmem", { runtime })` with a real manager.
-- `api.ts` extended with `autoRecall`, `autoCapture`, `recallMaxChars`, `collections` config fields.
-- `openclaw.plugin.json` updated with new config schema properties and UI hints.
-- All tests pass: 42 tests across 2 test files.
+- Deduplicated `apiCall` in `index.ts` — now imports from `api.ts` (single source of truth).
+- `docs/TASKS.md` reorganized: active tasks, version 0.0.2 backlog, completed 0.0.1 items, known risks.
+
+### Fixed
+
+- Removed 32-line duplicate `apiCall` function in `index.ts` that mirrored `api.ts` exactly.
 
 ## [0.0.1] - 2026-06-01
 

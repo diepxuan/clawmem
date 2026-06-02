@@ -128,6 +128,18 @@ The plugin registers a lightweight readiness service that checks the configured 
 - If the API is unreachable, the plugin logs a warning and continues.
 - Tools fail open — returning readable error text instead of crashing.
 
+## Hermes Agent Integration
+
+Since 0.0.2, ClawMem ships a Hermes-compatible bridge module that exposes
+5 memory tools for Hermes Agent consumption. The bridge reuses the shared
+HTTP client (`api.ts`) and has zero OpenClaw dependencies.
+
+See `hermes/README.md` for quick start and `hermes/SKILL.md` for the
+full skill template with tool documentation, usage patterns, and troubleshooting.
+
+Available tools: `clawmem_search`, `clawmem_get`, `clawmem_store`,
+`clawmem_session_log`, `clawmem_similar`.
+
 ## Development
 
 Install dependencies:
