@@ -2,49 +2,60 @@
 
 Tracked backlog for maintainers and AI agents. Keep this file factual and update it when tasks are completed.
 
-Last updated: 2026-06-01
+Last updated: 2026-06-02
 
-## Critical
-
-(None — all critical tasks completed)
-
-## Important
+## Active
 
 | ID | Task | Details | Files | Status |
 | --- | --- | --- | --- | --- |
-| T1 | Keep README current | README should stay aligned with config schema, API tools, and API readiness behavior. | `README.md`, `openclaw.plugin.json`, `tools.ts`, `api.ts` | Ongoing |
-| T3 | ~~Memory provider integration~~ | Plugin now owns memory slot, implements MemorySearchManager, registers standard tools + corpus supplement. | `index.ts`, `manager.ts`, `tools.ts`, `openclaw-memory-types.ts` | ✅ Done |
-| T4 | ~~Standard memory tools~~ | Added memory_search, memory_get, memory_recall, memory_store with legacy clawmem_* aliases. | `tools.ts`, `tools.test.ts` | ✅ Done |
+| T1 | Keep README current | README aligned with config schema, API tools, API readiness. | `README.md`, `openclaw.plugin.json`, `tools.ts`, `api.ts` | Ongoing |
 
-## Nice to have
+## Version 0.0.2 — Hermes Agent integration
 
-| ID | Task | Details | Files |
+| ID | Branch | Task | Details | Status |
+| --- | --- | --- | --- | --- |
+| T001 | `task/0.0.2-001-deduplicate-apicall` | Deduplicate apiCall in index.ts | Remove local apiCall, import from api.ts | Pending |
+| T002 | `task/0.0.2-002-hermes-bridge` | Hermes bridge module | `hermes/bridge.ts` — 5 tools reuse apiCall from api.ts | Pending |
+| T003 | `task/0.0.2-003-hermes-skill-docs` | Hermes skill + docs | `hermes/SKILL.md`, `hermes/README.md` | Pending |
+| T004 | `task/0.0.2-004-update-docs` | Update README + TASKS.md | Add Hermes section to README, refresh backlog | Pending |
+| T005 | `task/0.0.2-005-release` | Release 0.0.2 metadata | Bump version in package.json, plugin.json, CHANGELOG.md | Pending |
+
+Workflow: each task → PR vào `0.0.2` branch → Sếp review → merge → task tiếp.
+Sau khi 5 task merge xong: PR `0.0.2 -> main`, merge, tag `0.0.2`.
+
+## Completed (0.0.1)
+
+| ID | Task | Notes |
+| --- | --- | --- |
+| T3 | Memory provider integration | Plugin owns memory slot, MemorySearchManager, standard tools + corpus supplement |
+| T4 | Standard memory tools | memory_search/get/recall/store + clawmem_* legacy aliases |
+| T5 | Integration tests | 42 tests (28 tool + 14 manager) with mock API |
+| T6 | Service readiness handling | HEAD check + waitForApiReady + fail-open |
+| T7 | Compile to JS | Closed: OpenClaw 2026.5.28 loads index.ts directly |
+
+## Deferred
+
+| ID | Task | Reason |
+| --- | --- | --- |
+| T8 | Auto-recall/auto-capture | Requires upstream ClawMem API support |
+| T9 | OpenClaw SDK runtime validation | Pending real runtime testing |
+
+## Known risks
+
+| ID | Risk | Status | Details |
 | --- | --- | --- | --- |
-| T5 | ~~Add integration tests~~ | Done — 42 tests (28 tool + 14 manager tests) with mock API. | `tools.test.ts`, `manager.test.ts` |
-| T6 | ~~Add service readiness handling~~ | Done — HEAD check + waitForApiReady + fail-open. | `api.ts`, `manager.ts`, `index.ts` |
-| T7 | ~~Compile to JS for production~~ | Closed as not needed right now: OpenClaw 2026.5.28 can load the current `./index.ts` entry and no module-resolution failure is present. Keep runtime validation on `openclaw plugins build`. | Build pipeline |
-| T8 | Auto-recall/auto-capture integration | Implement actual auto-recall before turns and auto-capture after responses (requires ClawMem API support). | `index.ts`, upstream API |
-| T9 | OpenClaw SDK metadata/runtime validation | Use the real OpenClaw 2026.5.28 SDK: `defineToolPlugin` from `openclaw/plugin-sdk/tool-plugin`, `Type` from `typebox`, and `registerMemoryCapability`/`registerMemoryCorpusSupplement` via the plugin runtime API. Keep the plugin API-only, generate manifest metadata with `openclaw plugins build`, then validate with `npm run typecheck`, `npm test -- --run`, and `openclaw plugins build` until all pass. If runtime validation fails, document root cause and next fix here before continuing. | `index.ts`, `openclaw.plugin.json`, `package.json`, `package-lock.json` |
-
-## Memory provider review fixes
-
-| ID | Risk | Priority | Status | Details | Files |
-| --- | --- | --- | --- | --- | --- |
-| R1 | `_apiReady` cached forever | P1 | Follow-up PR | Add TTL (60s) — re-HEAD after expiry instead of caching forever | `manager.ts` |
-| R2 | `search()` hardcodes `mode: "auto"` | P2 | Follow-up PR | Add explicit `opts.mode` and map OpenClaw qmd search overrides to ClawMem keyword/semantic/hybrid modes | `manager.ts` |
-| R3 | `resolveMemoryBackendConfig` returns `"builtin"` — semantic needs verification | P1 | Research | OpenClaw 2026.5.28 type shim currently allows only `builtin`/`qmd`; do not change to `clawmem` without runtime/type confirmation | `index.ts`, SDK docs |
-| R6 | `registerMemoryCorpusSupplement` may be absent in some SDK runtimes | P1 | PR #19 | Add graceful fallback when method is unavailable | `index.ts` |
-| R7 | Corpus supplement `get(p)` — `p.lookup` shape unknown | P1 | Research | Test with real OpenClaw runtime to verify param format before changing behavior | `index.ts` |
-| R13 | `apiCall` — `resp.json()` throws on non-JSON responses | P1 | Follow-up PR | Wrap JSON parse in separate try/catch, fallback to empty object | `api.ts` |
-| R15 | `typebox ^1.1.39` may conflict with OpenClaw bundled version | P2 | PR #19 | Pin `typebox` to OpenClaw 2026.5.28's bundled `1.1.38` | `package.json` |
+| R1 | `_apiReady` cached forever | Resolved in manager.ts (TTL 60s) | |
+| R2 | `search()` hardcodes `mode: "auto"` | Follow-up | Map OpenClaw qmd overrides to ClawMem modes |
+| R3 | `resolveMemoryBackendConfig` returns `"builtin"` | Research | Needs OpenClaw SDK confirmation |
+| R7 | Corpus supplement `get(p)` — `p.lookup` shape unknown | Research | Test with real runtime |
+| R13 | `apiCall` — `resp.json()` throws on non-JSON | Follow-up | Wrap JSON parse in separate try/catch |
 
 ## Open questions
 
-| ID | Question | Context |
+| ID | Question | Status |
 | --- | --- | --- |
-| Q1 | Should this package ship TypeScript only or compiled JavaScript? | Closed for current issue: no module-resolution error is present; `./index.ts` remains valid if `openclaw plugins build` passes. Reopen only when a real runtime load failure points to TS/JS resolution. |
-| Q2 | Where is the canonical ClawMem API service maintained? | This plugin depends on the external HTTP API endpoint, currently `http://10.0.0.105:7438`. |
-| Q3 | Which OpenClaw versions are supported? | Plugin behavior depends on OpenClaw plugin/tool registration APIs. |
+| Q2 | Canonical ClawMem API service location | Depends on external endpoint (`http://10.0.0.105:7438`) |
+| Q3 | Supported OpenClaw versions | Plugin behavior depends on plugin/tool registration APIs |
 
 ## Maintenance rules
 
