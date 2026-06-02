@@ -18,7 +18,7 @@ Last updated: 2026-06-02
 | T002 | `task/0.0.2-002-hermes-bridge` | Hermes bridge module | `hermes/bridge.ts` — 5 tools reuse apiCall from api.ts | Pending |
 | T003 | `task/0.0.2-003-hermes-skill-docs` | Hermes skill + docs | `hermes/SKILL.md`, `hermes/README.md` | Pending |
 | T004 | `task/0.0.2-004-update-docs` | Update README + TASKS.md | Add Hermes section to README, refresh backlog | ✅ Done |
-| T005 | `task/0.0.2-005-release` | Release 0.0.2 metadata | Bump version in package.json, plugin.json, CHANGELOG.md | Pending |
+| T005 | `task/0.0.2-005-release` | Release 0.0.2 metadata | Bump version in package.json, plugin.json, CHANGELOG.md | ✅ Done |
 
 Workflow: each task → PR vào `0.0.2` branch → Sếp review → merge → task tiếp.
 Sau khi 5 task merge xong: PR `0.0.2 -> main`, merge, tag `0.0.2`.
